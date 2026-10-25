@@ -43,44 +43,24 @@ export const Context = z.object({
   weekStart: z.string(),
   verifiedMedicationPlan: z.boolean().default(false),
 });
-export const Metric = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("count"), target: z.number().int().positive() }),
-  z.object({
-    type: z.literal("duration"),
-    targetMinutes: z.number().int().positive(),
-  }),
-  z.object({
-    type: z.literal("distinct_days"),
-    targetDays: z.number().int().min(1).max(7),
-  }),
-  z.object({
-    type: z.literal("per_member"),
-    requiredMemberIds: z.array(z.string()).min(1),
-    minimumPerMember: z.number().int().positive(),
-  }),
-  z.object({
-    type: z.literal("group_sessions"),
-    targetSessions: z.number().int().positive(),
-    minimumMembersPerSession: z.number().int().min(2),
-  }),
-]);
+export const GOAL_TYPES = ["unique_participants", "duration", "unique_activities", "daily"] as const;
+export const GoalType = z.enum(GOAL_TYPES);
+export const ACTIVITY_TYPES = {feeding:"Feed",walking:"Walk",training:"Train",play:"Play",grooming:"Groom",medication:"Medication"} as const;
 export const Challenge = z.object({
-  title: z.string().min(3).max(90),
-  description: z.string().min(10).max(400),
-  category: Category,
-  participantIds: z.array(z.string()).min(1),
-  metric: Metric,
-  reasoning: z.string().max(400),
+  challengeId:z.string().min(1), petId:z.string().min(1),
+  participants:z.array(z.string()).min(1), completedBy:z.array(z.string()),
+  completedAt:z.string().nullable(), title:z.string().min(3).max(100),
+  completionStatus:z.enum(["not_started","in_progress","completed"]),
+  startDate:z.string().datetime(), endDate:z.string().datetime(),
+  progress:z.number().nonnegative(), goal:z.number().int().positive(),
+  goalType:GoalType, activityTypes:z.array(z.string()).min(1),
+  jointActivity:z.boolean(), pointReward:z.number().int().nonnegative(),
+}).strict();
+export const Batch=z.object({challenges:z.array(Challenge)});
+export const Activity=z.object({
+ id:z.string(),category:Category,date:z.string(),memberIds:z.array(z.string()).min(1),
+ minutes:z.number().nonnegative().default(0),verified:z.boolean().default(true)
 });
-export const Batch = z.object({ challenges: z.array(Challenge) });
-export const Activity = z.object({
-  id: z.string(),
-  category: Category,
-  date: z.string(),
-  memberIds: z.array(z.string()).min(1),
-  minutes: z.number().nonnegative().default(0),
-  verified: z.boolean().default(true),
-});
-export type ContextType = z.infer<typeof Context>;
-export type ChallengeType = z.infer<typeof Challenge>;
-export type ActivityType = z.infer<typeof Activity>;
+export type ContextType=z.infer<typeof Context>;
+export type ChallengeType=z.infer<typeof Challenge>;
+export type ActivityType=z.infer<typeof Activity>;

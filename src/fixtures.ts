@@ -71,55 +71,13 @@ export const sample: ContextType = {
     },
   ],
 };
-export const sampleChallenges: ChallengeType[] = [
-  {
-    title: "Everyone walks Buddy",
-    description:
-      "Each eligible family member logs at least one walk this week.",
-    category: "walking",
-    participantIds: ["alex", "sam", "jamie"],
-    metric: {
-      type: "per_member",
-      requiredMemberIds: ["alex", "sam", "jamie"],
-      minimumPerMember: 1,
-    },
-    reasoning: "Walking was completed last week; involve each eligible member.",
-  },
-  {
-    title: "Seven days of feeding logs",
-    description: "Record a feeding event on each of seven distinct days.",
-    category: "feeding",
-    participantIds: ["alex", "sam"],
-    metric: { type: "distinct_days", targetDays: 7 },
-    reasoning: "Repeat a consistently completed routine.",
-  },
-  {
-    title: "120 minutes of play",
-    description: "Log 120 minutes of play across the whole week.",
-    category: "play",
-    participantIds: ["alex", "sam", "jamie"],
-    metric: { type: "duration", targetMinutes: 120 },
-    reasoning: "Lower the target after a canceled 180-minute challenge.",
-  },
-  {
-    title: "Three family play sessions",
-    description:
-      "Complete three separate play sessions with at least two eligible members each.",
-    category: "play",
-    participantIds: ["alex", "sam", "jamie"],
-    metric: {
-      type: "group_sessions",
-      targetSessions: 3,
-      minimumMembersPerSession: 2,
-    },
-    reasoning: "Build on a previously completed group challenge.",
-  },
-  {
-    title: "Two short training sessions",
-    description: "Alex logs two short training sessions this week.",
-    category: "training",
-    participantIds: ["alex"],
-    metric: { type: "count", target: 2 },
-    reasoning: "Reduce frequency after daily training was canceled.",
-  },
+const base=(id:string,title:string,activityType:string,goalType:ChallengeType['goalType'],goal:number,participants:string[],jointActivity=false):ChallengeType=>({
+ challengeId:id,petId:sample.pet.id,participants,completedBy:[],completedAt:null,title,completionStatus:'in_progress',startDate:'2026-10-26T00:00:00.000Z',endDate:'2026-11-01T23:59:59.999Z',progress:0,goal,goalType,activityTypes:[activityType],jointActivity,pointReward:100
+});
+export const sampleChallenges:ChallengeType[]=[
+ base('c1','Everyone walks Buddy','Walk','unique_participants',3,['alex','sam','jamie']),
+ base('c2','Log feeding every day','Feed','daily',7,['alex','sam']),
+ base('c3','Play with Buddy for 120 minutes','Play','duration',120,['alex','sam','jamie']),
+ base('c4','Complete three family play sessions','Play','unique_activities',3,['alex','sam','jamie'],true),
+ base('c5','Complete two training sessions','Train','unique_activities',2,['alex'])
 ];

@@ -1,6 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import {isFoundationModelsEnabled} from 'react-native-apple-llm';
-import {SafeAreaView,ScrollView,StyleSheet,Text,View} from 'react-native';
+import {ScrollView,StyleSheet,Text,View} from 'react-native';
 import EvaluationLab from './eval/EvaluationLab';
 
 export default function App(){
@@ -20,13 +20,13 @@ export default function App(){
   void checkModel();
   return ()=>{active=false;};
  },[]);
- return <SafeAreaView style={styles.safe}>
+ return <View style={styles.safe}>
   <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
    <Text style={styles.heading}>Pet Challenge Evaluation Lab</Text>
    <Text style={styles.subtitle}>Automated synthetic scenarios · Apple on-device LLM · Expo SDK 58 target</Text>
    <Text selectable style={styles.status}>{modelStatus}</Text>
    <EvaluationLab/>
   </ScrollView>
- </SafeAreaView>;
+ </View>;
 }
 const styles=StyleSheet.create({safe:{flex:1,backgroundColor:'#f8fafc'},container:{padding:18,gap:16},heading:{fontSize:24,fontWeight:'bold'},subtitle:{color:'#596574'},status:{padding:10,backgroundColor:'#e2e8f0',borderRadius:6}});

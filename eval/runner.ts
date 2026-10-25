@@ -3,7 +3,7 @@ import {
   GenerationDiagnosticError,
   type GenerationAttempt,
 } from "../src/apple";
-import { buildPrompt, PROMPT_VERSION } from "../src/prompt";
+import { PROMPT_VERSION } from "../src/apple";
 import { scoreBatch } from "./scoring";
 import type { Scenario } from "./scenarios";
 export type EvalResult = {
@@ -62,7 +62,7 @@ export async function evaluateOne(
       challenges: [],
     };
   try {
-    const record = await generateApple(s.context);
+    const record = await generateApple({petId:s.context.pet.id,petName:s.context.pet.name,weekStart:s.context.weekStart,verifiedMedicationPlan:s.context.verifiedMedicationPlan,weeklyCount:s.context.weeklyCount,preferences:s.context.preferences,recentChallengeTitles:s.context.history.slice(-3).map(h=>h.title)});
     const score = scoreBatch(s, record.challenges);
     return {
       ...base,
@@ -88,7 +88,7 @@ export async function evaluateOne(
       failures: [],
       warnings: d?.errors ?? [],
       error: String(e),
-      prompts: d?.prompts ?? [buildPrompt(s.context, 0, [])],
+      prompts: d?.prompts ?? [],
       rawResponses: d?.rawResponses ?? [],
       challenges: d?.challenges ?? [],
       availability: d?.availability,
