@@ -116,7 +116,7 @@ export class GenerationDiagnosticError extends Error {
 // Constants
 // --------------------------------------------------
 
-export const PROMPT_VERSION = 'firebase-v2-personalized';
+export const PROMPT_VERSION = 'firebase-v3-idea-first';
 
 const MAX_ATTEMPTS = 4;
 
@@ -149,16 +149,14 @@ const ACTIVITY_TYPE: Record<Category, string> = {
 };
 
 const SESSION_INSTRUCTIONS = [
-  'Write ONE achievable, specific weekly pet-care challenge.',
-  'Title must be a natural action sentence with a measurable goal.',
-  'Use the pet name when useful. No labels, snake_case or descriptions.',
-  'Good style: "Log Milo\'s feeding every day this week";',
-  '"Spend 120 minutes playing together";',
-  '"Complete 3 activities with another family member";',
-  '"Everyone walks Milo once".',
-  'Follow the requested category, goalType and jointActivity exactly.',
-  'Use history to avoid repeats and adjust difficulty.',
-  'Return only the five structured fields.',
+  'Create ONE personalized, measurable weekly pet-care challenge. Invent the challenge idea FIRST, write its natural title, THEN derive category, goalType, goal and jointActivity from the same idea.',
+  'Fields: category is one enabled activity: feeding (meals), walking (walks), training (skills), play (enrichment), grooming (care), medication (prescribed doses; only when allowed).',
+  'goalType=daily counts DISTINCT active days (goal 1-7); duration counts TOTAL logged minutes; unique_activities counts DISTINCT qualifying activity logs, NOT kinds of activities; unique_participants counts DISTINCT eligible family members across logs (goal cannot exceed eligible member count).',
+  'jointActivity=true means EVERY counted log includes at least TWO distinct eligible members. Use only with 2+ eligible members; title must make togetherness clear. false permits solo logs.',
+  'Title and fields must express the SAME completion requirement, even if wording differs. Never imply an extra requirement the fields cannot measure. "Every day" means daily/7, "3 days" means daily/3, "60 minutes" means duration/60 total, "3 sessions" means unique_activities/3, "everyone" means unique_participants/eligible count.',
+  'Good titles: "Log Milo\'s feeding every day this week"; "Spend 60 minutes playing with Milo this week"; "Complete 3 training sessions with Milo"; "Everyone takes Milo for a walk"; "Brush Milo on 2 different days"; "Complete 3 play sessions together".',
+  'Choose achievable goals for the pet\'s breed, age, restrictions, family preferences and recent performance. Prefer unused categories and goal types across the week; never force unsuitable variety. No generic labels, snake_case, descriptions, or extra fields.',
+  'Return only title, category, goalType, goal, jointActivity.',
 ].join(' ');
 
 // Only FIVE model-generated fields.
@@ -383,158 +381,50 @@ function dateRange(weekStart: string): {
 }
 
 // --------------------------------------------------
-// Local challenge planning
+// Compact, idea-first prompt
 // --------------------------------------------------
 
-// Choose the category BEFORE prompting.
-// This is more reliable than asking the model
-// to decide which category has not been used.
-
-function chooseCategory(
-  eligible: EligiblePreference[],
-  accepted: FirebaseChallenge[],
-  attempt: number
-): EligiblePreference {
-  const usedCounts = new Map<Category, number>();
-
-  for (const challenge of accepted) {
-    const category = CATEGORIES.find(
-      item =>
-        ACTIVITY_TYPE[item] === challenge.activityTypes[0]
-    );
-
-    if (category) {
-      usedCounts.set(
-        category,
-        (usedCounts.get(category) ?? 0) + 1
-      );
-    }
-  }
-
-  const sorted = [...eligible].sort((a, b) => {
-    const countDifference =
-      (usedCounts.get(a.category) ?? 0) -
-      (usedCounts.get(b.category) ?? 0);
-
-    if (countDifference !== 0) return countDifference;
-
-    return (
-      CATEGORIES.indexOf(a.category) -
-      CATEGORIES.indexOf(b.category)
-    );
-  });
-
-  // Rotate retry choices when possible.
-  return sorted[attempt % sorted.length];
-}
-
-function chooseGoalType(
-  category: Category,
-  participants: string[],
-  accepted: FirebaseChallenge[],
-  attempt: number
-): { goalType: GoalType; jointActivity: boolean } {
-  // Prefer meaningful activity/metric combinations, not daily for everything.
-  const suitability: Record<Category, GoalType[]> = {
-    feeding: ['daily', 'unique_activities'],
-    walking: ['duration', 'daily', 'unique_activities', 'unique_participants'],
-    training: ['unique_activities', 'daily', 'duration'],
-    play: ['duration', 'unique_activities', 'unique_participants', 'daily'],
-    grooming: ['unique_activities', 'daily'],
-    medication: ['daily', 'unique_activities'],
-  };
-  const options = suitability[category].flatMap(goalType => {
-    if (goalType === 'unique_participants' && participants.length < 2) return [];
-    const jointOptions = participants.length >= 2 && category !== 'medication'
-      ? [false, true] : [false];
-    return jointOptions.map(jointActivity => ({ goalType, jointActivity }));
-  }).filter(option => !accepted.some(existing =>
-    existing.activityTypes[0] === ACTIVITY_TYPE[category] &&
-    existing.goalType === option.goalType &&
-    existing.jointActivity === option.jointActivity
-  ));
-  if (!options.length) throw Error('No unused goal combinations for category');
-  const globalUses = (type: GoalType) =>
-    accepted.filter(challenge => challenge.goalType === type).length;
-  options.sort((a, b) =>
-    globalUses(a.goalType) - globalUses(b.goalType) ||
-    suitability[category].indexOf(a.goalType) - suitability[category].indexOf(b.goalType) ||
-    Number(a.jointActivity) - Number(b.jointActivity)
-  );
-  return options[attempt % options.length];
-}
-
-// --------------------------------------------------
-// Compact prompts
-// --------------------------------------------------
-
-function previousSummary(
-  accepted: FirebaseChallenge[]
-): string {
-  if (accepted.length === 0) return 'none';
-
-  return accepted
-    .map(
-      challenge =>
-        `${challenge.activityTypes[0]}/` +
-        `${challenge.goalType}/` +
-        `${challenge.goal}/` +
-        `${challenge.jointActivity ? 'joint' : 'solo'}: ` +
-        challenge.title
-    )
-    .join('\n')
-    .slice(0, 900);
+function previousSummary(accepted: FirebaseChallenge[]): string {
+  if (!accepted.length) return 'none';
+  return accepted.map(c =>
+    `${c.title} [${c.activityTypes[0]}/${c.goalType}/${c.goal}/${c.jointActivity ? 'joint' : 'solo'}]`
+  ).join('\n').slice(0, 650);
 }
 
 function buildPrompt(
   input: GenerationInput,
-  category: EligiblePreference,
-  goalType: GoalType,
-  jointActivity: boolean,
+  eligible: EligiblePreference[],
   accepted: FirebaseChallenge[],
   compactRetry: boolean
 ): string {
-  const relevant = (input.recentChallenges ?? [])
-    .filter(h => h.category === category.category)
-    .slice(-2);
-  const others = (input.recentChallenges ?? [])
-    .filter(h => h.category !== category.category)
-    .slice(-2);
-  const history = [...relevant, ...others].slice(0, 4)
-    .map(h => `${h.status === 'completed' ? '+' : '-'} ${h.title.slice(0, 75)} ` +
-      `(${h.goalType} ${h.progress ?? (h.status === 'completed' ? h.goal : '?')}/${h.goal}` +
-      `${h.reason ? '; ' + h.reason.slice(0, 35) : ''})`)
+  const usedCategories = new Set(accepted.map(c => c.activityTypes[0]));
+  const usedGoalTypes = new Set(accepted.map(c => c.goalType));
+  const allowed = [...eligible].sort((a, b) =>
+    Number(usedCategories.has(ACTIVITY_TYPE[a.category])) -
+    Number(usedCategories.has(ACTIVITY_TYPE[b.category]))
+  );
+  const history = (input.recentChallenges ?? [])
+    .slice(-8).reverse()
+    .filter(h => eligible.some(e => e.category === h.category))
+    .slice(0, compactRetry ? 2 : 3)
+    .map(h => `${h.status === 'completed' ? '+' : '-'} ${h.title.slice(0, 65)} ` +
+      `[${h.goalType} ${h.progress ?? (h.status === 'completed' ? h.goal : '?')}/${h.goal}` +
+      `${h.reason ? '; ' + h.reason.slice(0, 25) : ''}]`)
     .join('\n');
-  const legacyHistory = (input.recentChallengeTitles ?? [])
-    .slice(-3).map(title => title.slice(0, 65)).join('; ');
-  const goalGuidance: Record<GoalType, string> = {
-    unique_participants: `Distinct eligible members; goal 2-${category.participants.length}.`,
-    duration: 'Total minutes this week; select a manageable goal, usually 15-120.',
-    unique_activities: 'Number of distinct logged activities; usually 2-5.',
-    daily: 'Number of distinct days with an activity; usually 2-7.',
-  };
-  const usedTypes = [...new Set(accepted.map(c => c.goalType))].join(', ') || 'none';
-  const usedActivities = [...new Set(accepted.map(c => c.activityTypes[0]))].join(', ') || 'none';
   const lines = [
-    `Pet: ${input.petName.slice(0, 35)}; ${input.petSpecies ?? 'pet'}` +
-      `${input.petBreed ? '; breed ' + input.petBreed.slice(0, 40) : ''}` +
-      `${input.petAgeYears !== undefined ? '; age ' + input.petAgeYears : ''}.`,
-    ...(input.petRestrictions?.length ? [`Care considerations: ${input.petRestrictions.slice(0, 2).join('; ').slice(0, 100)}.`] : []),
-    `Family enabled activities: ${input.preferences.filter(p => p.enabled && p.memberIds.length).map(p => p.category).join(', ')}.`,
-    `Create activity=${category.category}, goalType=${goalType}, jointActivity=${jointActivity}.`,
-    `Eligible family members: ${category.participants.length}.`,
-    goalGuidance[goalType],
-    'Write a clear, specific action title with the exact goal number and appropriate pet name.',
-    'Example style: "Log Milo\'s feeding every day this week"; "Spend 120 minutes playing together";',
-    '"Complete 3 activities with another family member"; "Everyone walks Milo once".',
-    'These are style examples, not goals to copy. Match your assigned activity and metric.',
-    'Diversify activities and goal types across the week; avoid overlapping tasks.',
-    `Used activities: ${usedActivities}; used goal types: ${usedTypes}.`,
-    `Already accepted:\n${previousSummary(accepted)}`,
+    `Pet: ${input.petName.slice(0, 35)} (${input.petSpecies ?? 'pet'}` +
+      `${input.petBreed ? ', ' + input.petBreed.slice(0, 35) : ''}` +
+      `${input.petAgeYears === undefined ? '' : ', age ' + input.petAgeYears}).`,
+    ...(input.petRestrictions?.length ? [`Care: ${input.petRestrictions.slice(0, 2).join('; ').slice(0, 75)}.`] : []),
+    `Eligible categories (eligible member counts): ${allowed.map(e => `${e.category}=${e.participants.length}`).join(', ')}.`,
+    'Choose ONE eligible category. Medication only if listed. For joint=true require 2+ eligible members for the chosen category.',
+    `Used categories: ${accepted.map(c => c.activityTypes[0]).join(', ') || 'none'}; used goal types: ${[...usedGoalTypes].join(', ') || 'none'}.`,
+    `This week's accepted challenges:\n${previousSummary(accepted)}`,
+    ...(history ? [`Recent history (+completed, -not completed):\n${history}`] : []),
+    'Invent a different, pet-appropriate challenge first; write its action title; then fill category, goalType, goal and jointActivity so all five fields mean the SAME thing.',
+    'Prefer unused eligible categories and underused goal types. Pick a feasible target; do not add title conditions that logs cannot measure.',
+    ...(compactRetry ? ['Be concise; avoid complex or compound goals.'] : []),
   ];
-  if (history) lines.push(`Relevant history (+completed, -not completed):\n${history}`);
-  else if (legacyHistory && !compactRetry) lines.push(`Past titles: ${legacyHistory}`);
-  if (compactRetry) lines.push('Keep the output concise; title under 65 characters.');
   return lines.join('\n');
 }
 
@@ -544,94 +434,40 @@ function buildPrompt(
 
 function validateModelChallenge(
   challenge: ModelChallenge,
-  requestedCategory: EligiblePreference,
-  requestedGoalType: GoalType,
-  requestedJointActivity:boolean,
+  eligible: EligiblePreference[],
   accepted: FirebaseChallenge[]
-): void {
-  if (challenge.category !== requestedCategory.category) {
-    throw new Error('Model changed requested category');
-  }
-
-  if (challenge.goalType !== requestedGoalType) {
-    throw new Error('Model changed requested goal type');
-  }
-
-  if(challenge.jointActivity!==requestedJointActivity)throw new Error('Model changed requested jointActivity');
-
-  if (
-    challenge.jointActivity &&
-    requestedCategory.participants.length < 2
-  ) {
+): EligiblePreference {
+  const preference = eligible.find(e => e.category === challenge.category);
+  if (!preference) throw new Error('Model chose an ineligible category');
+  if (challenge.jointActivity && preference.participants.length < 2) {
     throw new Error('Joint activity requires 2 eligible members');
   }
-
-  if (
-    challenge.goalType === 'unique_participants' &&
-    challenge.goal > requestedCategory.participants.length
-  ) {
-    throw new Error('Goal exceeds eligible participant count');
+  if (challenge.goalType === 'unique_participants' &&
+      (challenge.goal > preference.participants.length || challenge.goal < 1)) {
+    throw new Error('Participant goal outside eligible member count');
   }
-
   if (challenge.goalType === 'daily' && challenge.goal > 7) {
     throw new Error('Daily goal exceeds 7 days');
   }
-
-  if (
-    challenge.goalType === 'duration' &&
-    challenge.goal > 240
-  ) {
+  if (challenge.goalType === 'duration' && challenge.goal > 240) {
     throw new Error('Duration goal too large');
   }
-
-  if (
-    challenge.goalType === 'unique_activities' &&
-    challenge.goal > 14
-  ) {
+  if (challenge.goalType === 'unique_activities' && challenge.goal > 14) {
     throw new Error('Activity goal too large');
   }
-
-  if (
-    challenge.goalType === 'unique_participants' &&
-    challenge.goalType === requestedGoalType &&
-    challenge.goal < 2
-  ) {
-    throw new Error('Unique participants goal must be at least 2');
-  }
-
-  const normalizedTitle = challenge.title
-    .toLowerCase()
-    .replace(/[^a-z0-9 ]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  if (
-    accepted.some(
-      existing =>
-        existing.title
-          .toLowerCase()
-          .replace(/[^a-z0-9 ]/g, '')
-          .replace(/\s+/g, ' ')
-          .trim() === normalizedTitle
-    )
-  ) {
+  const normalize = (title: string) => title.toLowerCase()
+    .replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+  if (accepted.some(c => normalize(c.title) === normalize(challenge.title))) {
     throw new Error('Duplicate title');
   }
-
-  // Prevent same activity + same measurement +
-  // same joint requirement. This deliberately
-  // favors diversity over repeated variants.
-  if (
-    accepted.some(
-      existing =>
-        existing.activityTypes[0] ===
-          ACTIVITY_TYPE[challenge.category] &&
-        existing.goalType === challenge.goalType &&
-        existing.jointActivity === challenge.jointActivity
-    )
-  ) {
+  if (accepted.some(c =>
+    c.activityTypes[0] === ACTIVITY_TYPE[challenge.category] &&
+    c.goalType === challenge.goalType &&
+    c.jointActivity === challenge.jointActivity
+  )) {
     throw new Error('Overlapping challenge measurement');
   }
+  return preference;
 }
 
 // --------------------------------------------------
@@ -755,24 +591,9 @@ export async function generateApple(
       attemptIndex < MAX_ATTEMPTS && !accepted;
       attemptIndex++
     ) {
-      const preference = chooseCategory(
-        eligible,
-        challenges,
-        attemptIndex
-      );
-
-      const plan = chooseGoalType(
-        preference.category,
-        preference.participants,
-        challenges,
-        attemptIndex
-      );
-
       const prompt = buildPrompt(
         input,
-        preference,
-        plan.goalType,
-        plan.jointActivity,
+        eligible,
         challenges,
         attemptIndex > 0
       );
@@ -805,11 +626,9 @@ export async function generateApple(
 
         const modelChallenge = unpack(raw);
 
-        validateModelChallenge(
+        const preference = validateModelChallenge(
           modelChallenge,
-          preference,
-          plan.goalType,
-          plan.jointActivity,
+          eligible,
           challenges
         );
 

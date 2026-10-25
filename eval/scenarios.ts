@@ -131,18 +131,34 @@ export function generateScenarios({
         : metricType === "distinct_days" ? 2 + Math.floor(r() * 6)
         : 2 + Math.floor(r() * 4);
       const name = c.pet.name;
-      const titleByCategory: Record<string, string> = {
-        feeding: metricType === "distinct_days" ? `Log ${name}'s feeding on ${target} days this week` : `Log ${target} feedings for ${name} this week`,
-        walking: metricType === "duration" ? `Spend ${target} minutes walking ${name} this week` : `Take ${name} for ${target} walks this week`,
-        training: metricType === "distinct_days" ? `Practice training with ${name} on ${target} days` : `Complete ${target} training activities with ${name}`,
-        play: metricType === "duration" ? `Spend ${target} minutes playing with ${name}` : `Complete ${target} play activities with ${name}`,
-        grooming: `Complete ${target} grooming activities with ${name}`,
-        medication: `Log ${name}'s prescribed medication ${target} times this week`,
+      const unit = metricType === "duration" ? "duration" : metricType === "distinct_days" ? "daily" : "unique_activities";
+      const verb: Record<string, string> = {
+        feeding: `Log ${name}'s feeding`,
+        walking: `Walk ${name}`,
+        training: `Practice training with ${name}`,
+        play: `Play with ${name}`,
+        grooming: `Groom ${name}`,
+        medication: `Log ${name}'s prescribed medication`,
       };
+      const title = unit === "duration"
+        ? `Spend ${target} minutes on ${category} with ${name} this week`
+        : unit === "daily"
+          ? `${verb[category]} on ${target} different days this week`
+          : category === "walking"
+            ? `Take ${name} for ${target} walks this week`
+            : category === "training"
+              ? `Complete ${target} training sessions with ${name} this week`
+              : category === "play"
+                ? `Complete ${target} play sessions with ${name} this week`
+                : category === "grooming"
+                  ? `Complete ${target} grooming sessions for ${name} this week`
+                  : category === "feeding"
+                    ? `Log ${target} meals for ${name} this week`
+                    : `Log ${target} prescribed medication doses for ${name} this week`;
       return {
         id: `history${j}`,
         category,
-        title: titleByCategory[category],
+        title,
         status,
         metricType,
         target,
