@@ -1,22 +1,27 @@
 {
-  "name": "pet-care-mobile-app",
+  "name": "pet-weekly-apple-lab",
   "version": "1.0.0",
-  "main": "index.ts",
+  "private": true,
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "ios": "expo run:ios",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.mjs eval/*.test.mjs",
+    "eval:fixtures": "node --import tsx eval/offline.mjs"
+  },
   "dependencies": {
-    "expo": "~58.0.17",
-    "expo-status-bar": "~58.0.4",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "^58.0.19",
+    "expo-dev-client": "*",
     "react": "19.3.0",
-    "react-native": "0.88.0"
+    "react-native": "*",
+    "react-native-apple-llm": "*",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
-    "@types/react": "~19.3.0",
+    "@types/react": "*",
+    "tsx": "^4.20.0",
     "typescript": "~6.0.3"
-  },
-  "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
-  },
-  "private": true
+  }
 }
