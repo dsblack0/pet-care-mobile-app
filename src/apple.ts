@@ -116,7 +116,7 @@ export class GenerationDiagnosticError extends Error {
 // Constants
 // --------------------------------------------------
 
-export const PROMPT_VERSION = 'firebase-v4-eligibility-recovery';
+export const PROMPT_VERSION = 'firebase-v5-weekly-diversity';
 
 const MAX_ATTEMPTS = 4;
 const MAX_EXTRA_SLOTS = 3; // At most 8 slots to obtain 5 valid challenges.
@@ -157,7 +157,7 @@ const SESSION_INSTRUCTIONS = [
   'jointActivity=true means EVERY counted log includes at least TWO distinct eligible members. If the chosen category has only ONE eligible member, jointActivity MUST be false. For jointActivity=true, the title MUST explicitly say together or with another family member. A title without shared participation MUST use jointActivity=false.',
   'Before output, compare the title against jointActivity, category, goalType and goal. If jointActivity=true and the title does not say together or with another family member, REWRITE THE TITLE to state it. Title and fields must express the SAME completion requirement, even if wording differs. Never imply an extra requirement the fields cannot measure. "Every day" means daily/7, "3 days" means daily/3, "60 minutes" means duration/60 total, "3 sessions" means unique_activities/3, "everyone" means unique_participants/eligible count.',
   'Good titles: "Log Milo\'s feeding every day this week"; "Spend 60 minutes playing with Milo this week"; "Complete 3 training sessions with Milo"; "Everyone takes Milo for a walk"; "Brush Milo on 2 different days"; "Complete 3 play sessions together".',
-  'Choose achievable goals for the pet\'s breed, age, restrictions, family preferences and recent performance. Prefer unused categories and goal types across the week; never force unsuitable variety. No generic labels, snake_case, descriptions, or extra fields.',
+  'Choose achievable goals for the pet\'s breed, age, restrictions, family preferences and recent performance. Build a WEEKLY SET, not isolated titles: use a new eligible activity category whenever one remains; favor goal types not yet used (aim for at least three types in five challenges when feasible). A solo and joint version of the same activity do NOT count as different challenge ideas. Avoid challenges where completing one automatically completes another. No generic labels, snake_case, descriptions, or extra fields.',
   'Return only title, category, goalType, goal, jointActivity.',
 ].join(' ');
 
@@ -401,11 +401,17 @@ function buildPrompt(
   lastFailure?: string
 ): string {
   const usedCategories = new Set(accepted.map(c => c.activityTypes[0]));
-  const usedGoalTypes = new Set(accepted.map(c => c.goalType));
+  const goalCounts = Object.fromEntries(
+    GOAL_TYPES.map(type => [type, accepted.filter(c => c.goalType === type).length])
+  ) as Record<GoalType, number>;
+  const unused = eligible.filter(e => !usedCategories.has(ACTIVITY_TYPE[e.category]));
   const allowed = [...eligible].sort((a, b) =>
     Number(usedCategories.has(ACTIVITY_TYPE[a.category])) -
     Number(usedCategories.has(ACTIVITY_TYPE[b.category]))
   );
+  const remaining = Math.max(0, (input.weeklyCount ?? 5) - accepted.length);
+  const preferredCategories = unused.length ? unused.map(e => e.category) : eligible.map(e => e.category);
+  const underusedGoals = GOAL_TYPES.filter(type => goalCounts[type] === Math.min(...GOAL_TYPES.map(t => goalCounts[t])));
   const history = (input.recentChallenges ?? [])
     .slice(-8).reverse()
     .filter(h => eligible.some(e => e.category === h.category))
@@ -422,11 +428,17 @@ function buildPrompt(
     `Eligible categories and joint rules: ${allowed.map(e => `${e.category}=${e.participants.length} member(s), ${e.participants.length >= 2 ? 'solo OR joint' : 'SOLO ONLY (jointActivity=false)'}`).join('; ')}.`,
     `Joint-eligible categories ONLY: ${allowed.filter(e => e.participants.length >= 2).map(e => e.category).join(', ') || 'none'}. All other categories MUST use jointActivity=false.`,
     'If jointActivity=true, title MUST say together or with another family member. If title does not describe shared participation, set jointActivity=false or rewrite the title.',
-    `Used categories: ${accepted.map(c => c.activityTypes[0]).join(', ') || 'none'}; used goal types: ${[...usedGoalTypes].join(', ') || 'none'}.`,
+    `Weekly diversity: ${accepted.length}/${input.weeklyCount ?? 5} accepted; ${remaining} remaining.`,
+    `Used categories: ${accepted.map(c => c.activityTypes[0]).join(', ') || 'none'}.`,
+    `Unused eligible categories: ${unused.map(e => e.category).join(', ') || 'none'}.`,
+    `Goal usage: ${GOAL_TYPES.map(t => `${t}=${goalCounts[t]}`).join(', ')}.`,
+    `PRIORITY: Choose ${preferredCategories.join(' or ')}; prefer underused goal types ${underusedGoals.join(' or ')} when suitable.`,
+    ...(unused.length ? ['Do NOT repeat a used category while unused eligible categories remain. A joint variation of a solo challenge is NOT a new activity.'] : []),
     `This week's accepted challenges:\n${previousSummary(accepted)}`,
     ...(history ? [`Recent history (+completed, -not completed):\n${history}`] : []),
     'Invent a different, pet-appropriate challenge first; write its action title; then fill category, goalType, goal and jointActivity so all five fields mean the SAME thing.',
-    'Prefer unused eligible categories and underused goal types. Pick a feasible target; do not add title conditions that logs cannot measure.',
+    'Avoid semantic overlap: two challenges are too similar when doing one also substantially fulfills another, even if solo/joint or targets differ. Aim for at least 3 goal types in a 5-challenge week when feasible.',
+    'Consistency: every day=daily/7; N different days=daily/N; N sessions=unique_activities/N; N minutes=duration/N total; everyone=unique_participants/eligible count. For joint=true say together or with another family member in the title. Do not add title conditions logs cannot measure.',
     ...(compactRetry ? ['Be concise; avoid complex or compound goals.'] : []),
     ...(lastFailure ? [`Previous attempt was rejected: ${lastFailure}. Correct this specific problem; produce a NEW valid challenge.`] : []),
   ];
@@ -459,6 +471,15 @@ function validateModelChallenge(
   }
   if (challenge.goalType === 'unique_activities' && challenge.goal > 14) {
     throw new Error('Activity goal too large');
+  }
+  // If another eligible category remains, repeating a category makes
+  // the weekly set less diverse, even when the joint flag changes.
+  const unusedCategories = eligible.filter(e =>
+    !accepted.some(c => c.activityTypes[0] === ACTIVITY_TYPE[e.category])
+  );
+  if (unusedCategories.length > 0 &&
+      accepted.some(c => c.activityTypes[0] === ACTIVITY_TYPE[challenge.category])) {
+    throw new Error(`Repeated category while unused eligible categories remain: ${unusedCategories.map(e => e.category).join(', ')}`);
   }
   const normalize = (title: string) => title.toLowerCase()
     .replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
@@ -676,6 +697,8 @@ export async function generateApple(
 
         lastFailure = detail.includes('Joint activity requires')
           ? 'Joint activity was selected for a SOLO ONLY category. Choose jointActivity=false or a joint-eligible category and explicitly say together in the title'
+          : detail.includes('Repeated category while unused')
+          ? 'You repeated a used activity category. Choose an UNUSED eligible category; changing solo to joint is not sufficient'
           : detail.includes('Duplicate title')
           ? 'Duplicate title. Invent a different challenge and title'
           : detail.includes('Overlapping challenge')
