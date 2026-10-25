@@ -51,4 +51,3 @@ Other `src` modules are retained only as underlying test utilities; they are not
 - Medication instructions require special caution; do not interpret a pass as medical validation.
 - Results are shared as JSON/CSV text through the native share sheet, not written as guaranteed file attachments.
 - The app does not collect real pet/family data or require manual history entry.
-

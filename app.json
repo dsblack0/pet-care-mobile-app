@@ -1,1 +1,13 @@
-{"expo":{"name":"Pet Weekly Challenge Lab","slug":"pet-weekly-apple-lab","version":"1.0.0","orientation":"portrait","ios":{"bundleIdentifier":"com.example.petweeklylab","deploymentTarget":"26.0"},"plugins":["expo-dev-client"]}}
+{
+  "expo": {
+    "name": "Pet Weekly Challenge Lab",
+    "slug": "pet-weekly-apple-lab",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "ios": {
+      "bundleIdentifier": "com.example.petweeklylab",
+      "deploymentTarget": "26.0"
+    },
+    "plugins": ["expo-dev-client"]
+  }
+}
