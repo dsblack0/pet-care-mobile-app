@@ -67,9 +67,9 @@ export async function evaluateOne(
     return {
       ...base,
       durationMs: Date.now() - start,
-      passed: score.passed,
+      passed: score.passed && record.challenges.length >= Math.min(4, s.context.weeklyCount),
       failures: score.failures,
-      warnings: [...score.warnings, ...record.errors],
+      warnings: [...score.warnings, ...record.errors, ...(record.challenges.length < s.context.weeklyCount ? [`Partial generation: ${record.challenges.length}/${s.context.weeklyCount} challenges`] : [])],
       prompts: record.prompts,
       rawResponses: record.rawResponses,
       challenges: record.challenges,

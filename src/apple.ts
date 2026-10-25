@@ -116,9 +116,11 @@ export class GenerationDiagnosticError extends Error {
 // Constants
 // --------------------------------------------------
 
-export const PROMPT_VERSION = 'firebase-v3-idea-first';
+export const PROMPT_VERSION = 'firebase-v4-eligibility-recovery';
 
 const MAX_ATTEMPTS = 4;
+const MAX_EXTRA_SLOTS = 3; // At most 8 slots to obtain 5 valid challenges.
+const MIN_ACCEPTED = 4;
 
 const CATEGORIES: Category[] = [
   'feeding',
@@ -152,8 +154,8 @@ const SESSION_INSTRUCTIONS = [
   'Create ONE personalized, measurable weekly pet-care challenge. Invent the challenge idea FIRST, write its natural title, THEN derive category, goalType, goal and jointActivity from the same idea.',
   'Fields: category is one enabled activity: feeding (meals), walking (walks), training (skills), play (enrichment), grooming (care), medication (prescribed doses; only when allowed).',
   'goalType=daily counts DISTINCT active days (goal 1-7); duration counts TOTAL logged minutes; unique_activities counts DISTINCT qualifying activity logs, NOT kinds of activities; unique_participants counts DISTINCT eligible family members across logs (goal cannot exceed eligible member count).',
-  'jointActivity=true means EVERY counted log includes at least TWO distinct eligible members. Use only with 2+ eligible members; title must make togetherness clear. false permits solo logs.',
-  'Title and fields must express the SAME completion requirement, even if wording differs. Never imply an extra requirement the fields cannot measure. "Every day" means daily/7, "3 days" means daily/3, "60 minutes" means duration/60 total, "3 sessions" means unique_activities/3, "everyone" means unique_participants/eligible count.',
+  'jointActivity=true means EVERY counted log includes at least TWO distinct eligible members. If the chosen category has only ONE eligible member, jointActivity MUST be false. For jointActivity=true, the title MUST explicitly say together or with another family member. A title without shared participation MUST use jointActivity=false.',
+  'Before output, compare the title against jointActivity, category, goalType and goal. If jointActivity=true and the title does not say together or with another family member, REWRITE THE TITLE to state it. Title and fields must express the SAME completion requirement, even if wording differs. Never imply an extra requirement the fields cannot measure. "Every day" means daily/7, "3 days" means daily/3, "60 minutes" means duration/60 total, "3 sessions" means unique_activities/3, "everyone" means unique_participants/eligible count.',
   'Good titles: "Log Milo\'s feeding every day this week"; "Spend 60 minutes playing with Milo this week"; "Complete 3 training sessions with Milo"; "Everyone takes Milo for a walk"; "Brush Milo on 2 different days"; "Complete 3 play sessions together".',
   'Choose achievable goals for the pet\'s breed, age, restrictions, family preferences and recent performance. Prefer unused categories and goal types across the week; never force unsuitable variety. No generic labels, snake_case, descriptions, or extra fields.',
   'Return only title, category, goalType, goal, jointActivity.',
@@ -395,7 +397,8 @@ function buildPrompt(
   input: GenerationInput,
   eligible: EligiblePreference[],
   accepted: FirebaseChallenge[],
-  compactRetry: boolean
+  compactRetry: boolean,
+  lastFailure?: string
 ): string {
   const usedCategories = new Set(accepted.map(c => c.activityTypes[0]));
   const usedGoalTypes = new Set(accepted.map(c => c.goalType));
@@ -416,14 +419,16 @@ function buildPrompt(
       `${input.petBreed ? ', ' + input.petBreed.slice(0, 35) : ''}` +
       `${input.petAgeYears === undefined ? '' : ', age ' + input.petAgeYears}).`,
     ...(input.petRestrictions?.length ? [`Care: ${input.petRestrictions.slice(0, 2).join('; ').slice(0, 75)}.`] : []),
-    `Eligible categories (eligible member counts): ${allowed.map(e => `${e.category}=${e.participants.length}`).join(', ')}.`,
-    'Choose ONE eligible category. Medication only if listed. For joint=true require 2+ eligible members for the chosen category.',
+    `Eligible categories and joint rules: ${allowed.map(e => `${e.category}=${e.participants.length} member(s), ${e.participants.length >= 2 ? 'solo OR joint' : 'SOLO ONLY (jointActivity=false)'}`).join('; ')}.`,
+    `Joint-eligible categories ONLY: ${allowed.filter(e => e.participants.length >= 2).map(e => e.category).join(', ') || 'none'}. All other categories MUST use jointActivity=false.`,
+    'If jointActivity=true, title MUST say together or with another family member. If title does not describe shared participation, set jointActivity=false or rewrite the title.',
     `Used categories: ${accepted.map(c => c.activityTypes[0]).join(', ') || 'none'}; used goal types: ${[...usedGoalTypes].join(', ') || 'none'}.`,
     `This week's accepted challenges:\n${previousSummary(accepted)}`,
     ...(history ? [`Recent history (+completed, -not completed):\n${history}`] : []),
     'Invent a different, pet-appropriate challenge first; write its action title; then fill category, goalType, goal and jointActivity so all five fields mean the SAME thing.',
     'Prefer unused eligible categories and underused goal types. Pick a feasible target; do not add title conditions that logs cannot measure.',
     ...(compactRetry ? ['Be concise; avoid complex or compound goals.'] : []),
+    ...(lastFailure ? [`Previous attempt was rejected: ${lastFailure}. Correct this specific problem; produce a NEW valid challenge.`] : []),
   ];
   return lines.join('\n');
 }
@@ -583,8 +588,12 @@ export async function generateApple(
     fail(`Apple Foundation Models unavailable: ${availability}`);
   }
 
-  for (let index = 0; index < count; index++) {
+  // Failed slots do not abort the run. Extra slots provide bounded recovery.
+  const slotLimit = count + MAX_EXTRA_SLOTS;
+  const failedSlots: number[] = [];
+  for (let index = 0; index < slotLimit && challenges.length < count; index++) {
     let accepted = false;
+    let lastFailure: string | undefined;
 
     for (
       let attemptIndex = 0;
@@ -595,7 +604,8 @@ export async function generateApple(
         input,
         eligible,
         challenges,
-        attemptIndex > 0
+        attemptIndex > 0,
+        lastFailure
       );
 
       prompts.push(prompt);
@@ -636,7 +646,7 @@ export async function generateApple(
           input,
           modelChallenge,
           preference,
-          index,
+          challenges.length,
           dates
         );
 
@@ -663,6 +673,14 @@ export async function generateApple(
           error instanceof Error
             ? `${error.name}: ${error.message}`
             : String(error);
+
+        lastFailure = detail.includes('Joint activity requires')
+          ? 'Joint activity was selected for a SOLO ONLY category. Choose jointActivity=false or a joint-eligible category and explicitly say together in the title'
+          : detail.includes('Duplicate title')
+          ? 'Duplicate title. Invent a different challenge and title'
+          : detail.includes('Overlapping challenge')
+          ? 'Repeated activity and goal combination. Choose a different idea'
+          : detail.slice(0, 100);
 
         errors.push(
           `Challenge ${index + 1}, ` +
@@ -700,11 +718,18 @@ export async function generateApple(
     }
 
     if (!accepted) {
-      fail(
-        `Unable to generate valid challenge ${index + 1}`
-      );
+      failedSlots.push(index + 1);
+      const message = `Slot ${index + 1} exhausted ${MAX_ATTEMPTS} attempts; continuing`;
+      errors.push(message);
+      console.warn('[AppleLLM]', message);
     }
   }
 
+  if (challenges.length < Math.min(MIN_ACCEPTED, count)) {
+    fail(`Generated only ${challenges.length}/${count} valid challenges after ${slotLimit} slots`);
+  }
+  if (challenges.length < count) {
+    errors.push(`Partial result: ${challenges.length}/${count} valid challenges; exhausted slots: ${failedSlots.join(', ') || 'none'}`);
+  }
   return snapshot();
 }
