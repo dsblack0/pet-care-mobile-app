@@ -27,7 +27,7 @@ export const sample: ContextType = {
     {
       id: "h1",
       category: "walking",
-      title: "Walk Buddy five times",
+      title: "Take Buddy for 5 walks this week",
       status: "completed",
       metricType: "count",
       target: 5,
@@ -36,7 +36,7 @@ export const sample: ContextType = {
     {
       id: "h2",
       category: "feeding",
-      title: "Log feeding every day",
+      title: "Log Buddy's feeding every day this week",
       status: "completed",
       metricType: "distinct_days",
       target: 7,
@@ -45,7 +45,7 @@ export const sample: ContextType = {
     {
       id: "h3",
       category: "play",
-      title: "Spend 180 minutes playing",
+      title: "Spend 180 minutes playing with Buddy",
       status: "canceled",
       metricType: "duration",
       target: 180,
@@ -54,7 +54,7 @@ export const sample: ContextType = {
     {
       id: "h4",
       category: "training",
-      title: "Train every day",
+      title: "Practice training with Buddy every day",
       status: "canceled",
       metricType: "distinct_days",
       target: 7,
@@ -63,7 +63,7 @@ export const sample: ContextType = {
     {
       id: "h5",
       category: "play",
-      title: "Two family play sessions",
+      title: "Complete 2 play activities together",
       status: "completed",
       metricType: "group_sessions",
       target: 2,
@@ -76,7 +76,7 @@ const base=(id:string,title:string,activityType:string,goalType:ChallengeType['g
 });
 export const sampleChallenges:ChallengeType[]=[
  base('c1','Everyone walks Buddy','Walk','unique_participants',3,['alex','sam','jamie']),
- base('c2','Log feeding every day','Feed','daily',7,['alex','sam']),
+ base('c2',"Log Buddy's feeding every day this week",'Feed','daily',7,['alex','sam']),
  base('c3','Play with Buddy for 120 minutes','Play','duration',120,['alex','sam','jamie']),
  base('c4','Complete three family play sessions','Play','unique_activities',3,['alex','sam','jamie'],true),
  base('c5','Complete two training sessions','Train','unique_activities',2,['alex'])

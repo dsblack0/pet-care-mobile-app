@@ -16,6 +16,7 @@ export const Pet = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   species: z.enum(["dog", "cat"]),
+  breed: z.string().optional(),
   ageYears: z.number().nonnegative(),
   restrictions: z.array(z.string()),
 });

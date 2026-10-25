@@ -62,7 +62,7 @@ export async function evaluateOne(
       challenges: [],
     };
   try {
-    const record = await generateApple({petId:s.context.pet.id,petName:s.context.pet.name,weekStart:s.context.weekStart,verifiedMedicationPlan:s.context.verifiedMedicationPlan,weeklyCount:s.context.weeklyCount,preferences:s.context.preferences,recentChallengeTitles:s.context.history.slice(-3).map(h=>h.title)});
+    const record = await generateApple({petId:s.context.pet.id,petName:s.context.pet.name,petSpecies:s.context.pet.species,petBreed:s.context.pet.breed,petAgeYears:s.context.pet.ageYears,petRestrictions:s.context.pet.restrictions,weekStart:s.context.weekStart,verifiedMedicationPlan:s.context.verifiedMedicationPlan,weeklyCount:s.context.weeklyCount,preferences:s.context.preferences,recentChallenges:s.context.history.slice(-8).map(h=>({title:h.title,category:h.category,status:h.status,goalType:h.metricType === "count" || h.metricType === "group_sessions" ? "unique_activities" : h.metricType === "distinct_days" ? "daily" : h.metricType === "duration" ? "duration" : "unique_activities",goal:h.target,reason:h.reason}))});
     const score = scoreBatch(s, record.challenges);
     return {
       ...base,

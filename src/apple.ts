@@ -36,12 +36,25 @@ export type ChallengePreference = {
 export type GenerationInput = {
   petId: string;
   petName: string;
+  petSpecies?: 'dog' | 'cat';
+  petBreed?: string;
+  petAgeYears?: number;
+  petRestrictions?: string[];
   weekStart: string; // YYYY-MM-DD
   preferences: ChallengePreference[];
   verifiedMedicationPlan: boolean;
 
   // Optional short summaries, not full activity logs.
   recentChallengeTitles?: string[];
+  recentChallenges?: Array<{
+    title: string;
+    category: Category;
+    status: 'completed' | 'canceled';
+    goalType: GoalType;
+    goal: number;
+    progress?: number;
+    reason?: string;
+  }>;
 
   // Default: 5
   weeklyCount?: number;
@@ -103,7 +116,7 @@ export class GenerationDiagnosticError extends Error {
 // Constants
 // --------------------------------------------------
 
-export const PROMPT_VERSION = 'firebase-v1-compact';
+export const PROMPT_VERSION = 'firebase-v2-personalized';
 
 const MAX_ATTEMPTS = 4;
 
@@ -135,11 +148,18 @@ const ACTIVITY_TYPE: Record<Category, string> = {
   medication: 'Medication',
 };
 
-const SESSION_INSTRUCTIONS =
-  'Create concise, measurable weekly pet-care ' +
-  'challenges. Follow the requested category and ' +
-  'goal type. Return only the structured fields. ' +
-  'Do not add descriptions or explanations.';
+const SESSION_INSTRUCTIONS = [
+  'Write ONE achievable, specific weekly pet-care challenge.',
+  'Title must be a natural action sentence with a measurable goal.',
+  'Use the pet name when useful. No labels, snake_case or descriptions.',
+  'Good style: "Log Milo\'s feeding every day this week";',
+  '"Spend 120 minutes playing together";',
+  '"Complete 3 activities with another family member";',
+  '"Everyone walks Milo once".',
+  'Follow the requested category, goalType and jointActivity exactly.',
+  'Use history to avoid repeats and adjust difficulty.',
+  'Return only the five structured fields.',
+].join(' ');
 
 // Only FIVE model-generated fields.
 export const structure = {
@@ -413,15 +433,35 @@ function chooseGoalType(
   participants: string[],
   accepted: FirebaseChallenge[],
   attempt: number
-): {goalType:GoalType;jointActivity:boolean} {
- const types:GoalType[]=['daily','duration','unique_activities','unique_participants'];
- const combinations=types.flatMap(goalType=>{
-   if(goalType==='unique_participants'&&participants.length<2)return [];
-   return (participants.length>=2?[false,true]:[false]).map(jointActivity=>({goalType,jointActivity}));
- });
- const unused=combinations.filter(c=>!accepted.some(a=>a.activityTypes[0]===ACTIVITY_TYPE[category]&&a.goalType===c.goalType&&a.jointActivity===c.jointActivity));
- if(!unused.length)throw Error('No unused goal combinations for category');
- return unused[attempt%unused.length];
+): { goalType: GoalType; jointActivity: boolean } {
+  // Prefer meaningful activity/metric combinations, not daily for everything.
+  const suitability: Record<Category, GoalType[]> = {
+    feeding: ['daily', 'unique_activities'],
+    walking: ['duration', 'daily', 'unique_activities', 'unique_participants'],
+    training: ['unique_activities', 'daily', 'duration'],
+    play: ['duration', 'unique_activities', 'unique_participants', 'daily'],
+    grooming: ['unique_activities', 'daily'],
+    medication: ['daily', 'unique_activities'],
+  };
+  const options = suitability[category].flatMap(goalType => {
+    if (goalType === 'unique_participants' && participants.length < 2) return [];
+    const jointOptions = participants.length >= 2 && category !== 'medication'
+      ? [false, true] : [false];
+    return jointOptions.map(jointActivity => ({ goalType, jointActivity }));
+  }).filter(option => !accepted.some(existing =>
+    existing.activityTypes[0] === ACTIVITY_TYPE[category] &&
+    existing.goalType === option.goalType &&
+    existing.jointActivity === option.jointActivity
+  ));
+  if (!options.length) throw Error('No unused goal combinations for category');
+  const globalUses = (type: GoalType) =>
+    accepted.filter(challenge => challenge.goalType === type).length;
+  options.sort((a, b) =>
+    globalUses(a.goalType) - globalUses(b.goalType) ||
+    suitability[category].indexOf(a.goalType) - suitability[category].indexOf(b.goalType) ||
+    Number(a.jointActivity) - Number(b.jointActivity)
+  );
+  return options[attempt % options.length];
 }
 
 // --------------------------------------------------
@@ -450,52 +490,51 @@ function buildPrompt(
   input: GenerationInput,
   category: EligiblePreference,
   goalType: GoalType,
-  jointActivity:boolean,
+  jointActivity: boolean,
   accepted: FirebaseChallenge[],
   compactRetry: boolean
 ): string {
-  const previous = previousSummary(accepted);
-
-  const history = (input.recentChallengeTitles ?? [])
-    .slice(-3)
-    .map(title => title.slice(0, 65))
-    .join('; ');
-
+  const relevant = (input.recentChallenges ?? [])
+    .filter(h => h.category === category.category)
+    .slice(-2);
+  const others = (input.recentChallenges ?? [])
+    .filter(h => h.category !== category.category)
+    .slice(-2);
+  const history = [...relevant, ...others].slice(0, 4)
+    .map(h => `${h.status === 'completed' ? '+' : '-'} ${h.title.slice(0, 75)} ` +
+      `(${h.goalType} ${h.progress ?? (h.status === 'completed' ? h.goal : '?')}/${h.goal}` +
+      `${h.reason ? '; ' + h.reason.slice(0, 35) : ''})`)
+    .join('\n');
+  const legacyHistory = (input.recentChallengeTitles ?? [])
+    .slice(-3).map(title => title.slice(0, 65)).join('; ');
   const goalGuidance: Record<GoalType, string> = {
-    unique_participants:
-      `Goal = number of distinct participating family members, ` +
-      `maximum ${category.participants.length}.`,
-    duration:
-      'Goal = total activity minutes, usually 10-120.',
-    unique_activities:
-      'Goal = number of distinct logged activities, usually 2-5.',
-    daily:
-      'Goal = distinct active days, maximum 7.',
+    unique_participants: `Distinct eligible members; goal 2-${category.participants.length}.`,
+    duration: 'Total minutes this week; select a manageable goal, usually 15-120.',
+    unique_activities: 'Number of distinct logged activities; usually 2-5.',
+    daily: 'Number of distinct days with an activity; usually 2-7.',
   };
-
+  const usedTypes = [...new Set(accepted.map(c => c.goalType))].join(', ') || 'none';
+  const usedActivities = [...new Set(accepted.map(c => c.activityTypes[0]))].join(', ') || 'none';
   const lines = [
-    `Pet: ${input.petName.slice(0, 35)}`,
-    `Activity: ${category.category}`,
-    `Goal type: ${goalType}`,
-    `jointActivity: ${jointActivity}`,
-    `Eligible member count: ${category.participants.length}`,
+    `Pet: ${input.petName.slice(0, 35)}; ${input.petSpecies ?? 'pet'}` +
+      `${input.petBreed ? '; breed ' + input.petBreed.slice(0, 40) : ''}` +
+      `${input.petAgeYears !== undefined ? '; age ' + input.petAgeYears : ''}.`,
+    ...(input.petRestrictions?.length ? [`Care considerations: ${input.petRestrictions.slice(0, 2).join('; ').slice(0, 100)}.`] : []),
+    `Family enabled activities: ${input.preferences.filter(p => p.enabled && p.memberIds.length).map(p => p.category).join(', ')}.`,
+    `Create activity=${category.category}, goalType=${goalType}, jointActivity=${jointActivity}.`,
+    `Eligible family members: ${category.participants.length}.`,
     goalGuidance[goalType],
-    'Title: short, specific, natural, no generic numbering.',
-    'Use the requested activity and goal type.',
-    'Do not duplicate or weaken a previous challenge.',
-    'Use exactly the requested jointActivity value.',
-    'For jointActivity=true, title must say together.',
-    `Already accepted:\n${previous}`,
+    'Write a clear, specific action title with the exact goal number and appropriate pet name.',
+    'Example style: "Log Milo\'s feeding every day this week"; "Spend 120 minutes playing together";',
+    '"Complete 3 activities with another family member"; "Everyone walks Milo once".',
+    'These are style examples, not goals to copy. Match your assigned activity and metric.',
+    'Diversify activities and goal types across the week; avoid overlapping tasks.',
+    `Used activities: ${usedActivities}; used goal types: ${usedTypes}.`,
+    `Already accepted:\n${previousSummary(accepted)}`,
   ];
-
-  if (!compactRetry && history) {
-    lines.push(`Recent past titles: ${history}`);
-  }
-
-  if (compactRetry) {
-    lines.push('Keep the title under 50 characters.');
-  }
-
+  if (history) lines.push(`Relevant history (+completed, -not completed):\n${history}`);
+  else if (legacyHistory && !compactRetry) lines.push(`Past titles: ${legacyHistory}`);
+  if (compactRetry) lines.push('Keep the output concise; title under 65 characters.');
   return lines.join('\n');
 }
 

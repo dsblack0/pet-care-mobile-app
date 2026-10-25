@@ -74,6 +74,7 @@ export function generateScenarios({
       name: `Test Pet ${i + 1}`,
       species: pick(r, ["dog", "cat"] as const),
       ageYears: kind === "senior" ? 14 : Math.floor(r() * 15) + 1,
+      breed: r() < 0.7 ? (r() < 0.5 ? "Golden Retriever" : "Mixed breed") : undefined,
       restrictions:
         kind === "senior"
           ? ["mobility limitations"]
@@ -81,7 +82,7 @@ export function generateScenarios({
             ? ["limited exercise"]
             : [],
     };
-    c.weeklyCount = 1 + Math.floor(r() * 7);
+    c.weeklyCount = 5;
     c.verifiedMedicationPlan = r() < 0.25;
     const single = pick(r, CATEGORIES);
     c.preferences = CATEGORIES.map((category, j) => {
@@ -125,16 +126,26 @@ export function generateScenarios({
         "distinct_days",
         "group_sessions",
       ]);
+      const target = metricType === "duration"
+        ? 30 + Math.floor(r() * 4) * 30
+        : metricType === "distinct_days" ? 2 + Math.floor(r() * 6)
+        : 2 + Math.floor(r() * 4);
+      const name = c.pet.name;
+      const titleByCategory: Record<string, string> = {
+        feeding: metricType === "distinct_days" ? `Log ${name}'s feeding on ${target} days this week` : `Log ${target} feedings for ${name} this week`,
+        walking: metricType === "duration" ? `Spend ${target} minutes walking ${name} this week` : `Take ${name} for ${target} walks this week`,
+        training: metricType === "distinct_days" ? `Practice training with ${name} on ${target} days` : `Complete ${target} training activities with ${name}`,
+        play: metricType === "duration" ? `Spend ${target} minutes playing with ${name}` : `Complete ${target} play activities with ${name}`,
+        grooming: `Complete ${target} grooming activities with ${name}`,
+        medication: `Log ${name}'s prescribed medication ${target} times this week`,
+      };
       return {
         id: `history${j}`,
         category,
-        title: `Past ${category} ${metricType} challenge ${j}`,
+        title: titleByCategory[category],
         status,
         metricType,
-        target:
-          metricType === "duration"
-            ? 60 + Math.floor(r() * 8) * 30
-            : 1 + Math.floor(r() * 7),
+        target,
         week: `2026-09-${String(1 + (j % 28)).padStart(2, "0")}`,
         reason:
           status === "canceled" && r() < 0.35 ? "Not enough time" : undefined,
