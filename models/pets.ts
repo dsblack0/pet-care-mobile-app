@@ -3,7 +3,7 @@ export interface Pet {
   name: string;
   species: string;
   breed: string | null;
-  gender: string;
+  gender: "Male" | "Female";
   age: number;
   birthday: string | null;
   petPhotoPath: string | null;
@@ -18,7 +18,7 @@ export type NewPet = Omit<Pet, "petId">;
 export const createPet = (
   name: string,
   species: string,
-  gender: string,
+  gender: "Male" | "Female",
   age: number,
   breed: string | null = null,
   birthday: string | null = null,
