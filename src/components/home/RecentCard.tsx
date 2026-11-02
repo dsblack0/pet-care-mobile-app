@@ -1,10 +1,10 @@
 import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { ActivityIcon } from '@/components/home/ActivityIcon';
+import { MemoryThumb } from '@/components/home/MemoryThumb';
 import { colors, fonts } from '@/constants/theme';
 import { toDate } from '@/lib/homeData';
-import { formatRelativeDay } from '@/lib/format';
+import { activityLabel, formatRelativeDay } from '@/lib/format';
 import type { Memory, User } from '@/types/firestore';
 
 const MAX_ITEMS = 3;
@@ -43,9 +43,9 @@ export function RecentCard({ petName, memories, usersById }: Props) {
         {items.length === 0 && <Text style={styles.empty}>No memories yet.</Text>}
         {items.map((m, i) => (
           <View key={m.memoryId} style={[styles.row, i > 0 && styles.divider]}>
-            <ActivityIcon activityType={m.activityType} />
+            <MemoryThumb memory={m} />
             <View style={styles.rowText}>
-              <Text style={styles.title}>{m.description}</Text>
+              <Text style={styles.title}>{m.description || activityLabel(m.activityType)}</Text>
               <Text style={styles.subtitle}>{subtitleFor(m, usersById)}</Text>
             </View>
             <Text style={styles.when}>{formatRelativeDay(toDate(m.occurredAt))}</Text>

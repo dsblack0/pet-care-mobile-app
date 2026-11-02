@@ -11,9 +11,13 @@ type Props = {
   onSelectPet: (petId: string) => void;
   /** Shown before the pet name, e.g. the mini pet face. */
   leading?: ReactNode;
+  /** Small label above the pet name, e.g. "Log Activity". */
+  eyebrow?: string;
+  /** Icon-only Rewards button, for screens with less room. */
+  compact?: boolean;
 };
 
-export function HomeHeader({ pet, pets, onSelectPet, leading }: Props) {
+export function HomeHeader({ pet, pets, onSelectPet, leading, eyebrow, compact }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
@@ -26,18 +30,29 @@ export function HomeHeader({ pet, pets, onSelectPet, leading }: Props) {
         accessibilityLabel="Switch pet"
       >
         {leading}
-        <Text style={styles.petName}>{pet?.name ?? ''}</Text>
-        {pets.length > 1 && <Ionicons name="chevron-down" size={20} color={colors.text} />}
+        <View>
+          {eyebrow && <Text style={styles.eyebrow}>{eyebrow}</Text>}
+          <View style={styles.petNameRow}>
+            <Text style={styles.petName}>{pet?.name ?? ''}</Text>
+            {pets.length > 1 && <Ionicons name="chevron-down" size={20} color={colors.text} />}
+          </View>
+        </View>
       </Pressable>
 
       <View style={styles.actions}>
         <Pressable style={styles.circle} accessibilityRole="button" accessibilityLabel="Help">
           <Ionicons name="help" size={20} color={colors.primary} />
         </Pressable>
-        <Pressable style={styles.rewards} accessibilityRole="button">
-          <Ionicons name="gift" size={16} color={colors.primary} />
-          <Text style={styles.rewardsText}>Rewards</Text>
-        </Pressable>
+        {compact ? (
+          <Pressable style={styles.circle} accessibilityRole="button" accessibilityLabel="Rewards">
+            <Ionicons name="gift" size={18} color={colors.primary} />
+          </Pressable>
+        ) : (
+          <Pressable style={styles.rewards} accessibilityRole="button">
+            <Ionicons name="gift" size={16} color={colors.primary} />
+            <Text style={styles.rewardsText}>Rewards</Text>
+          </Pressable>
+        )}
         <Pressable style={styles.circle} accessibilityRole="button" accessibilityLabel="Profile">
           <Ionicons name="person" size={18} color={colors.primary} />
         </Pressable>
@@ -83,7 +98,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   petButton: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  petNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   petName: { fontSize: 24, fontFamily: fonts.heading, color: colors.text },
+  eyebrow: { fontSize: 13, color: colors.textMuted, marginBottom: -2 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   circle: {
     width: 40,

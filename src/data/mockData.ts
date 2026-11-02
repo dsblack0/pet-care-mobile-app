@@ -5,6 +5,7 @@ import type {
   Level,
   Memory,
   Pet,
+  PointRule,
   User,
   UserPet,
 } from '@/types/firestore';
@@ -18,11 +19,41 @@ function at(daysAgo: number, hours: number, minutes = 0): string {
 }
 
 export const users: User[] = [
-  { userId: 'user001', name: 'Alex', email: 'alex@example.com', joinedAt: '2026-10-01T10:00:00Z', numberOfPets: 2 },
-  { userId: 'user002', name: 'Mom', email: 'mom@example.com', joinedAt: '2026-10-01T10:00:00Z', numberOfPets: 2 },
-  { userId: 'user003', name: 'Dad', email: 'dad@example.com', joinedAt: '2026-10-01T10:00:00Z', numberOfPets: 2 },
-  { userId: 'user004', name: 'Leah', email: 'leah@example.com', joinedAt: '2026-10-01T10:00:00Z', numberOfPets: 1 },
-  { userId: 'user005', name: 'Sam', email: 'sam@example.com', joinedAt: '2026-10-01T10:00:00Z', numberOfPets: 1 },
+  {
+    userId: 'user001',
+    name: 'Alex',
+    email: 'alex@example.com',
+    joinedAt: '2026-10-01T10:00:00Z',
+    numberOfPets: 2,
+  },
+  {
+    userId: 'user002',
+    name: 'Mom',
+    email: 'mom@example.com',
+    joinedAt: '2026-10-01T10:00:00Z',
+    numberOfPets: 2,
+  },
+  {
+    userId: 'user003',
+    name: 'Dad',
+    email: 'dad@example.com',
+    joinedAt: '2026-10-01T10:00:00Z',
+    numberOfPets: 2,
+  },
+  {
+    userId: 'user004',
+    name: 'Leah',
+    email: 'leah@example.com',
+    joinedAt: '2026-10-01T10:00:00Z',
+    numberOfPets: 1,
+  },
+  {
+    userId: 'user005',
+    name: 'Sam',
+    email: 'sam@example.com',
+    joinedAt: '2026-10-01T10:00:00Z',
+    numberOfPets: 1,
+  },
 ];
 
 export const pets: Pet[] = [
@@ -59,6 +90,22 @@ export const pets: Pet[] = [
 export const userPets: UserPet[] = [
   { userId: 'user001', petId: 'pet001', role: 'owner', joinedAt: '2026-10-01T10:30:00Z' },
   { userId: 'user001', petId: 'pet002', role: 'member', joinedAt: '2026-10-01T10:30:00Z' },
+  { userId: 'user002', petId: 'pet001', role: 'member', joinedAt: '2026-10-01T10:30:00Z' },
+  { userId: 'user003', petId: 'pet001', role: 'member', joinedAt: '2026-10-01T10:30:00Z' },
+  { userId: 'user004', petId: 'pet001', role: 'member', joinedAt: '2026-10-01T10:30:00Z' },
+  { userId: 'user002', petId: 'pet002', role: 'owner', joinedAt: '2026-10-01T10:30:00Z' },
+];
+
+// Base points per activity. Strings, like the sample `points` JSON.
+export const points: PointRule[] = [
+  { action: 'Walk', pointsGained: '20' },
+  { action: 'Feed', pointsGained: '5' },
+  { action: 'Play', pointsGained: '10' },
+  { action: 'Train', pointsGained: '15' },
+  { action: 'Groom', pointsGained: '10' },
+  { action: 'Medication', pointsGained: '5' },
+  { action: 'Other', pointsGained: '5' },
+  { action: 'TogetherBonus', pointsGained: '5' },
 ];
 
 export const levels: Level[] = [
@@ -69,10 +116,34 @@ export const levels: Level[] = [
 ];
 
 export const careSchedules: CareSchedule[] = [
-  { id: 'schedule001', petId: 'pet001', activityType: 'Feed', scheduledTime: '07:00', recurrence: 'daily' },
-  { id: 'schedule002', petId: 'pet001', activityType: 'Walk', scheduledTime: '15:00', recurrence: 'daily' },
-  { id: 'schedule003', petId: 'pet001', activityType: 'Medication', scheduledTime: '18:00', recurrence: 'daily' },
-  { id: 'schedule004', petId: 'pet002', activityType: 'Feed', scheduledTime: '08:00', recurrence: 'daily' },
+  {
+    id: 'schedule001',
+    petId: 'pet001',
+    activityType: 'Feed',
+    scheduledTime: '07:00',
+    recurrence: 'daily',
+  },
+  {
+    id: 'schedule002',
+    petId: 'pet001',
+    activityType: 'Walk',
+    scheduledTime: '15:00',
+    recurrence: 'daily',
+  },
+  {
+    id: 'schedule003',
+    petId: 'pet001',
+    activityType: 'Medication',
+    scheduledTime: '18:00',
+    recurrence: 'daily',
+  },
+  {
+    id: 'schedule004',
+    petId: 'pet002',
+    activityType: 'Feed',
+    scheduledTime: '08:00',
+    recurrence: 'daily',
+  },
 ];
 
 export const memories: Memory[] = [

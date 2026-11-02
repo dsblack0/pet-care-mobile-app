@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 
 import { fetchPetHome, fetchPetsForUser, fetchUser, type PetHomeData } from '@/lib/homeData';
+import { dataVersionStore, selectedPetStore } from '@/lib/store';
 import type { Pet, User } from '@/types/firestore';
 
 export function useHomeData(userId: string) {
   const [user, setUser] = useState<User | null>(null);
   const [pets, setPets] = useState<Pet[]>([]);
-  const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [data, setData] = useState<PetHomeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const selectedPetId = selectedPetStore.useValue();
+  const dataVersion = dataVersionStore.useValue();
 
   useEffect(() => {
     let cancelled = false;
@@ -36,14 +38,14 @@ export function useHomeData(userId: string) {
     return () => {
       cancelled = true;
     };
-  }, [userId, selectedPetId, reloadKey]);
+  }, [userId, selectedPetId, reloadKey, dataVersion]);
 
   const pet = pets.find((p) => p.petId === selectedPetId) ?? pets[0] ?? null;
 
   const selectPet = (petId: string) => {
     if (petId === pet?.petId) return;
     setLoading(true);
-    setSelectedPetId(petId);
+    selectedPetStore.set(petId);
   };
 
   const refresh = () => {

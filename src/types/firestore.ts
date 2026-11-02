@@ -82,3 +82,8 @@ export type Level = {
   title: string;
   nextLevelPoints: number | string;
 };
+
+export type PointRule = {
+  action: string;
+  pointsGained: number | string;
+};

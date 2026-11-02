@@ -39,4 +39,5 @@ export const activityTint: Record<string, { bg: string; fg: string }> = {
   Train: { bg: '#DDEBFA', fg: '#3D78B5' },
   Groom: { bg: '#FBE3EE', fg: '#B5527E' },
   Photo: { bg: '#D6EFDC', fg: '#3F8A57' },
+  Other: { bg: '#EFE7DC', fg: '#7A6D63' },
 };

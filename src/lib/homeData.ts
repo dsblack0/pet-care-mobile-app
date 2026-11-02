@@ -64,6 +64,6 @@ export async function fetchPetHome(pet: Pet): Promise<PetHomeData> {
     ...memories.flatMap((m) => [m.createdBy, ...m.participants]),
   ]);
 
-  // petPhotoPath is a Storage path; resolve to a download URL once Firebase is wired up.
+  // petPhotoPath is a Storage path; screens resolve it with useImageUrl when they show it.
   return { level, photoUrl: null, challenge, schedules, memories, usersById };
 }

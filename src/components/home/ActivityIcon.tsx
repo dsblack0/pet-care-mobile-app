@@ -6,7 +6,7 @@ import { activityTint } from '@/constants/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-const ICONS: Record<string, IconName> = {
+export const ACTIVITY_ICONS: Record<string, IconName> = {
   Feed: 'restaurant',
   Walk: 'paw',
   Medication: 'medkit',
@@ -14,13 +14,14 @@ const ICONS: Record<string, IconName> = {
   Train: 'school',
   Groom: 'cut',
   Photo: 'camera',
+  Other: 'ellipsis-horizontal',
 };
 
 export function ActivityIcon({ activityType }: { activityType: string }) {
   const tint = activityTint[activityType] ?? activityTint.Feed;
   return (
     <View style={[styles.tile, { backgroundColor: tint.bg }]}>
-      <Ionicons name={ICONS[activityType] ?? 'ellipse'} size={20} color={tint.fg} />
+      <Ionicons name={ACTIVITY_ICONS[activityType] ?? 'ellipse'} size={20} color={tint.fg} />
     </View>
   );
 }
