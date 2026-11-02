@@ -10,15 +10,15 @@ import Animated, {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HomeHeader } from '@/components/home/HomeHeader';
-import { PetCard } from '@/components/home/PetCard';
+import { HALO_SIZE, PetCard } from '@/components/home/PetCard';
 import { RecentCard } from '@/components/home/RecentCard';
 import { TodayCard } from '@/components/home/TodayCard';
 import { WeeklyChallengeCard } from '@/components/home/WeeklyChallengeCard';
 import { PetFace } from '@/components/pet/PetFace';
-import { colors } from '@/constants/theme';
+import { colors, fonts } from '@/constants/theme';
 import { CURRENT_USER_ID } from '@/constants/session';
 import { useHomeData } from '@/hooks/useHomeData';
-import { getCareRows, getMood } from '@/lib/care';
+import { getCareRows, getMood, getPetLine } from '@/lib/care';
 
 const BOTTOM_SLOP = 24;
 
@@ -54,7 +54,8 @@ export default function HomeScreen() {
     return { opacity: t, width: 40 * t, overflow: 'hidden' };
   });
 
-  const mood = data ? getMood(getCareRows(data.schedules, data.memories, data.usersById)) : 'calm';
+  const careRows = data ? getCareRows(data.schedules, data.memories, data.usersById) : [];
+  const mood = getMood(careRows);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -97,15 +98,13 @@ export default function HomeScreen() {
 
           {pet && data && (
             <>
-              <View
-                onLayout={(e) =>
-                  heroBottom.set(e.nativeEvent.layout.y + e.nativeEvent.layout.height)
-                }
-              >
+              {/* The header's mini face fades in once the big face scrolls out of view. */}
+              <View onLayout={(e) => heroBottom.set(e.nativeEvent.layout.y + HALO_SIZE)}>
                 <PetCard
                   pet={pet}
                   level={data.level}
                   mood={mood}
+                  line={getPetLine(careRows)}
                   scrollY={scrollY}
                   atBottom={atBottom}
                 />
@@ -128,10 +127,10 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.surface },
+  safe: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 20, gap: 22, paddingBottom: 40 },
-  greeting: { fontSize: 30, fontWeight: '700', color: colors.text },
+  content: { padding: 20, paddingTop: 8, gap: 26, paddingBottom: 40 },
+  greeting: { fontSize: 18, fontFamily: fonts.subheading, color: colors.textMuted },
   center: {
     flex: 1,
     alignItems: 'center',

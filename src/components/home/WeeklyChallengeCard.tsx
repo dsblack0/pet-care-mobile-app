@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ProgressBar } from '@/components/home/ProgressBar';
-import { colors } from '@/constants/theme';
+import { colors, fonts } from '@/constants/theme';
 import { toDate } from '@/lib/homeData';
 import { daysLeft, initial } from '@/lib/format';
 import type { Challenge, User } from '@/types/firestore';
@@ -56,14 +56,14 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     gap: 10,
   },
-  heading: { fontSize: 18, fontWeight: '600', color: colors.text, paddingHorizontal: 16 },
+  heading: { fontSize: 18, fontFamily: fonts.heading, color: colors.text, paddingHorizontal: 16 },
   inner: {
     backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     gap: 10,
   },
-  title: { fontSize: 19, fontWeight: '700', color: colors.text, lineHeight: 25 },
+  title: { fontSize: 20, fontFamily: fonts.heading, color: colors.text, lineHeight: 26 },
   meta: { fontSize: 14, color: colors.textMuted },
   footer: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   avatar: {

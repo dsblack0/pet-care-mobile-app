@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ActivityIcon } from '@/components/home/ActivityIcon';
-import { colors } from '@/constants/theme';
+import { colors, fonts } from '@/constants/theme';
 import { getCareRows, type CareStatus } from '@/lib/care';
 import { activityLabel, formatShortDate } from '@/lib/format';
 import type { CareSchedule, Memory, User } from '@/types/firestore';
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
   },
-  heading: { fontSize: 20, fontWeight: '700', color: colors.text },
+  heading: { fontSize: 22, fontFamily: fonts.heading, color: colors.text },
   date: { fontSize: 15, fontWeight: '600', color: colors.text },
   card: {
     backgroundColor: colors.surface,

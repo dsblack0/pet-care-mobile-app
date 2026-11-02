@@ -1,6 +1,7 @@
 // Per-species look for the animated pet face. Add a species by adding an entry.
 export type FaceSpec = {
   fur: string;
+  halo: string; // pale tint of the fur, used behind the face
   ear: string;
   earInner: string;
   muzzle: string;
@@ -15,6 +16,7 @@ export type FaceSpec = {
 
 const dog: FaceSpec = {
   fur: '#E7B877',
+  halo: '#FCEBD2',
   ear: '#C48A4C',
   earInner: '#C48A4C',
   muzzle: '#F7E0BA',
@@ -29,6 +31,7 @@ const dog: FaceSpec = {
 
 const cat: FaceSpec = {
   fur: '#B8AEA4',
+  halo: '#EEEAE6',
   ear: '#B8AEA4',
   earInner: '#F2B8C6',
   muzzle: '#EFE9E3',
@@ -44,6 +47,7 @@ const cat: FaceSpec = {
 // Used for any species without its own entry.
 const generic: FaceSpec = {
   fur: '#D9C7B0',
+  halo: '#F4ECE1',
   ear: '#C7B299',
   earInner: '#EBC9C2',
   muzzle: '#F1E6D6',

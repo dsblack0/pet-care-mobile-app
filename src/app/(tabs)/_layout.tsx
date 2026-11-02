@@ -1,8 +1,36 @@
-import Feather from '@expo/vector-icons/Feather';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
+import type { ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { colors } from '@/constants/theme';
+
+type IconName = ComponentProps<typeof Ionicons>['name'];
+
+// Filled when selected, outlined otherwise.
+function TabIcon({
+  focused,
+  filled,
+  outline,
+}: {
+  focused: boolean;
+  filled: IconName;
+  outline: IconName;
+}) {
+  return (
+    <Ionicons
+      name={focused ? filled : outline}
+      size={24}
+      color={focused ? colors.primary : colors.textMuted}
+    />
+  );
+}
+
+function tabIcon(filled: IconName, outline: IconName) {
+  return function Icon({ focused }: { focused: boolean }) {
+    return <TabIcon focused={focused} filled={filled} outline={outline} />;
+  };
+}
 
 export default function TabLayout() {
   return (
@@ -11,21 +39,16 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: { backgroundColor: colors.background, borderTopColor: colors.border },
       }}
     >
       <Tabs.Screen
         name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ focused }) => <Feather name="home" size={24} color={focused ? colors.primary : colors.textMuted} />,
-        }}
+        options={{ title: 'Home', tabBarIcon: tabIcon('home', 'home-outline') }}
       />
       <Tabs.Screen
         name="challenges"
-        options={{
-          title: 'Challenges',
-          tabBarIcon: ({ focused }) => <Feather name="flag" size={24} color={focused ? colors.primary : colors.textMuted} />,
-        }}
+        options={{ title: 'Challenges', tabBarIcon: tabIcon('flag', 'flag-outline') }}
       />
       <Tabs.Screen
         name="log"
@@ -33,24 +56,18 @@ export default function TabLayout() {
           title: 'Log',
           tabBarIcon: () => (
             <View style={styles.logButton}>
-              <Feather name="plus" size={22} color="#FFFFFF" />
+              <Ionicons name="add" size={24} color="#FFFFFF" />
             </View>
           ),
         }}
       />
       <Tabs.Screen
         name="memories"
-        options={{
-          title: 'Memories',
-          tabBarIcon: ({ focused }) => <Feather name="image" size={24} color={focused ? colors.primary : colors.textMuted} />,
-        }}
+        options={{ title: 'Memories', tabBarIcon: tabIcon('images', 'images-outline') }}
       />
       <Tabs.Screen
         name="family"
-        options={{
-          title: 'Family',
-          tabBarIcon: ({ focused }) => <Feather name="users" size={24} color={focused ? colors.primary : colors.textMuted} />,
-        }}
+        options={{ title: 'Family', tabBarIcon: tabIcon('people', 'people-outline') }}
       />
     </Tabs>
   );

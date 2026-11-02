@@ -2,7 +2,7 @@ import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ActivityIcon } from '@/components/home/ActivityIcon';
-import { colors } from '@/constants/theme';
+import { colors, fonts } from '@/constants/theme';
 import { toDate } from '@/lib/homeData';
 import { formatRelativeDay } from '@/lib/format';
 import type { Memory, User } from '@/types/firestore';
@@ -59,7 +59,7 @@ export function RecentCard({ petName, memories, usersById }: Props) {
 const styles = StyleSheet.create({
   section: { gap: 12 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  heading: { fontSize: 20, fontWeight: '700', color: colors.text },
+  heading: { fontSize: 22, fontFamily: fonts.heading, color: colors.text },
   seeAll: { fontSize: 15, color: colors.primary },
   card: {
     backgroundColor: colors.surface,

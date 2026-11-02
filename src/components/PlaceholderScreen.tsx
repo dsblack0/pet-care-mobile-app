@@ -1,7 +1,7 @@
 import { StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors } from '@/constants/theme';
+import { colors, fonts } from '@/constants/theme';
 
 export function PlaceholderScreen({ title }: { title: string }) {
   return (
@@ -18,5 +18,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.background,
   },
-  title: { fontSize: 22, fontWeight: '700', color: colors.text },
+  title: { fontSize: 24, fontFamily: fonts.heading, color: colors.text },
 });

@@ -1,8 +1,8 @@
-import Feather from '@expo/vector-icons/Feather';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState, type ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '@/constants/theme';
+import { colors, fonts } from '@/constants/theme';
 import type { Pet } from '@/types/firestore';
 
 type Props = {
@@ -27,19 +27,19 @@ export function HomeHeader({ pet, pets, onSelectPet, leading }: Props) {
       >
         {leading}
         <Text style={styles.petName}>{pet?.name ?? ''}</Text>
-        {pets.length > 1 && <Feather name="chevron-down" size={20} color={colors.text} />}
+        {pets.length > 1 && <Ionicons name="chevron-down" size={20} color={colors.text} />}
       </Pressable>
 
       <View style={styles.actions}>
         <Pressable style={styles.circle} accessibilityRole="button" accessibilityLabel="Help">
-          <Text style={styles.help}>?</Text>
+          <Ionicons name="help" size={20} color={colors.primary} />
         </Pressable>
         <Pressable style={styles.rewards} accessibilityRole="button">
-          <Feather name="gift" size={16} color={colors.primary} />
+          <Ionicons name="gift" size={16} color={colors.primary} />
           <Text style={styles.rewardsText}>Rewards</Text>
         </Pressable>
         <Pressable style={styles.circle} accessibilityRole="button" accessibilityLabel="Profile">
-          <Feather name="user" size={18} color={colors.text} />
+          <Ionicons name="person" size={18} color={colors.primary} />
         </Pressable>
       </View>
 
@@ -61,7 +61,9 @@ export function HomeHeader({ pet, pets, onSelectPet, leading }: Props) {
                 }}
               >
                 <Text style={styles.sheetText}>{p.name}</Text>
-                {p.petId === pet?.petId && <Feather name="check" size={18} color={colors.primary} />}
+                {p.petId === pet?.petId && (
+                  <Ionicons name="checkmark" size={18} color={colors.primary} />
+                )}
               </Pressable>
             ))}
           </View>
@@ -78,12 +80,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: colors.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
   },
   petButton: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  petName: { fontSize: 22, fontWeight: '700', color: colors.text },
+  petName: { fontSize: 24, fontFamily: fonts.heading, color: colors.text },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   circle: {
     width: 40,
@@ -93,7 +93,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  help: { fontSize: 17, fontWeight: '700', color: colors.primary },
   rewards: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -103,7 +102,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: colors.primarySoft,
   },
-  rewardsText: { fontSize: 16, fontWeight: '600', color: colors.primary },
+  rewardsText: { fontSize: 16, fontFamily: fonts.subheading, color: colors.primary },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.3)',
@@ -118,5 +117,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
   },
-  sheetText: { fontSize: 17, color: colors.text },
+  sheetText: { fontSize: 18, fontFamily: fonts.subheading, color: colors.text },
 });
