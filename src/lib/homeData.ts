@@ -1,18 +1,12 @@
 // Data access for the Home screen. Currently backed by mock data; each function is async
 // so the bodies can be swapped for Firestore queries without touching the UI.
-import * as mock from '@/data/mockData';
-import type {
-  CareSchedule,
-  Challenge,
-  FirestoreDate,
-  Level,
-  Memory,
-  Pet,
-  User,
-} from '@/types/firestore';
+import type { Timestamp } from 'firebase/firestore';
 
-export function toDate(value: FirestoreDate): Date {
-  return new Date(value);
+import * as mock from '@/data/mockData';
+import type { CareSchedule, Challenge, Level, Memory, Pet, User } from '@/types/firestore';
+
+export function toDate(value: Timestamp): Date {
+  return value.toDate();
 }
 
 export async function fetchUser(userId: string): Promise<User | null> {
@@ -29,7 +23,7 @@ export async function fetchUsers(userIds: string[]): Promise<Record<string, User
 }
 
 export async function fetchPetsForUser(userId: string): Promise<Pet[]> {
-  const petIds = mock.userPets.filter((up) => up.userId === userId).map((up) => up.petId);
+  const petIds = mock.userPets.filter((up) => up.userId.id === userId).map((up) => up.petId.id);
   return mock.pets.filter((p) => petIds.includes(p.petId));
 }
 
@@ -43,25 +37,25 @@ export type PetHomeData = {
 };
 
 export async function fetchPetHome(pet: Pet): Promise<PetHomeData> {
-  // levelNum is a string in the sample data, so compare as numbers.
-  const level = mock.levels.find((l) => Number(l.levelNum) === pet.level) ?? null;
+  const level = mock.levels.find((l) => l.levelNum === pet.level) ?? null;
 
   const challenge =
     mock.challenges
-      .filter((c) => c.petId === pet.petId && c.completionStatus === 'in_progress')
+      .filter((c) => c.petId.id === pet.petId && c.completionStatus === 'in_progress')
       .sort((a, b) => toDate(a.endDate).getTime() - toDate(b.endDate).getTime())[0] ?? null;
 
   const schedules = mock.careSchedules
-    .filter((s) => s.petId === pet.petId)
-    .sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
+    .filter((s) => s.petId.id === pet.petId)
+    // Schedules without a time go last.
+    .sort((a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99'));
 
   const memories = mock.memories
-    .filter((m) => m.petId === pet.petId)
+    .filter((m) => m.petId.id === pet.petId)
     .sort((a, b) => toDate(b.occurredAt).getTime() - toDate(a.occurredAt).getTime());
 
   const usersById = await fetchUsers([
-    ...(challenge?.participants ?? []),
-    ...memories.flatMap((m) => [m.createdBy, ...m.participants]),
+    ...(challenge?.participants ?? []).map((r) => r.id),
+    ...memories.flatMap((m) => [m.createdBy.id, ...m.participants.map((r) => r.id)]),
   ]);
 
   // petPhotoPath is a Storage path; screens resolve it with useImageUrl when they show it.

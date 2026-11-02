@@ -22,7 +22,7 @@ import { WhenField } from '@/components/log/WhenField';
 import { CURRENT_USER_ID } from '@/constants/session';
 import { colors, fonts } from '@/constants/theme';
 import { fetchPetsForUser } from '@/lib/homeData';
-import { createMemory, fetchFamily, fetchPointsTable } from '@/lib/logData';
+import { fetchFamily, fetchPointsTable, logActivity } from '@/lib/logData';
 import { selectedPetStore } from '@/lib/store';
 import type { Pet, User } from '@/types/firestore';
 
@@ -95,7 +95,7 @@ export default function LogScreen() {
     setSubmitting(true);
     setError(null);
     try {
-      await createMemory({
+      await logActivity({
         petId: pet.petId,
         createdBy: CURRENT_USER_ID,
         activityType: activity,

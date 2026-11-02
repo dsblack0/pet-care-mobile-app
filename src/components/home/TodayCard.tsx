@@ -31,7 +31,7 @@ export function TodayCard({ schedules, memories, usersById }: Props) {
       <View style={styles.card}>
         {rows.length === 0 && <Text style={styles.empty}>No care scheduled today.</Text>}
         {rows.map(({ schedule, status, subtitle }, i) => (
-          <View key={schedule.id} style={[styles.row, i > 0 && styles.divider]}>
+          <View key={schedule.careScheduleId} style={[styles.row, i > 0 && styles.divider]}>
             <ActivityIcon activityType={schedule.activityType} />
             <View style={styles.rowText}>
               <Text style={styles.title}>{activityLabel(schedule.activityType)}</Text>

@@ -29,13 +29,10 @@ export function getCareRows(
   const todays = memories.filter((m) => isSameDay(toDate(m.occurredAt), now));
 
   return schedules.map((s) => {
-    const done = todays.find((m) => m.careScheduleId === s.id);
-    const [h, min] = s.scheduledTime.split(':').map(Number);
-    const due = new Date(now);
-    due.setHours(h, min, 0, 0);
+    const done = todays.find((m) => m.careScheduleId?.id === s.careScheduleId);
 
     if (done) {
-      const doneBy = usersById[done.createdBy]?.name ?? 'someone';
+      const doneBy = usersById[done.createdBy.id]?.name ?? 'someone';
       return {
         schedule: s,
         status: 'Done',
@@ -43,6 +40,13 @@ export function getCareRows(
         doneBy,
       };
     }
+    // No set time: due sometime today, never overdue.
+    if (!s.scheduledTime) {
+      return { schedule: s, status: 'Later', subtitle: 'Anytime today' };
+    }
+    const [h, min] = s.scheduledTime.split(':').map(Number);
+    const due = new Date(now);
+    due.setHours(h, min, 0, 0);
     if (now >= due) {
       return {
         schedule: s,

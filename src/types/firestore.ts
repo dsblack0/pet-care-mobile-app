@@ -1,89 +1,31 @@
-// Shapes follow the Firebase sample JSONs. Dates are ISO strings.
-export type FirestoreDate = string;
+// The app's data types come from the team's models/ folder. References to other documents are
+// DocumentReferences (use `.id` for the id) and dates are Firestore Timestamps.
+import type { DocumentReference, Timestamp } from 'firebase/firestore';
 
-export type User = {
-  userId: string;
-  name: string;
-  email: string;
-  joinedAt: FirestoreDate;
-  profilePhotoPath?: string;
-  numberOfPets: number;
-  notifications?: { email: boolean; text: boolean; push: boolean };
-};
+export type { CareSchedule } from '../../models/careSchedules';
+export type { Level } from '../../models/levels';
+export type { Memory } from '../../models/memories';
+export type { Pet } from '../../models/pets';
+export type { Points } from '../../models/points';
+export type { User } from '../../models/users';
+export type { UserPet } from '../../models/userPets';
 
-export type Pet = {
-  petId: string;
-  name: string;
-  species: string;
-  breed: string;
-  gender: string;
-  age: number;
-  birthday: string;
-  petPhotoPath?: string;
-  weight: number;
-  numberOfMembers: number;
-  totalPoints: number;
-  level: number;
-};
-
-export type UserPet = {
-  userId: string;
-  petId: string;
-  role: string;
-  joinedAt: FirestoreDate;
-};
-
-export type CareSchedule = {
-  id: string; // Firestore doc id, referenced by Memory.careScheduleId
-  petId: string;
-  activityType: string;
-  scheduledTime: string; // "HH:mm"
-  recurrence: string;
-};
-
-export type Memory = {
-  memoryId: string;
-  petId: string;
-  createdBy: string;
-  createdAt: FirestoreDate;
-  occurredAt: FirestoreDate;
-  photoPath?: string;
-  description: string;
-  location?: { latitude: number; longitude: number };
-  activityType: string;
-  participants: string[];
-  careScheduleId?: string;
-  durationMinutes?: number;
-  basePoints: number;
-  bonusPoints: number;
-};
-
+// models/ has no challenges model yet, so it's defined here in the same style.
 export type Challenge = {
   challengeId: string;
-  petId: string;
-  participants: string[];
+  petId: DocumentReference;
+  participants: DocumentReference[];
   jointActivity: boolean;
-  completedBy: string[];
-  completedAt: FirestoreDate | null;
+  completedBy: DocumentReference[];
+  completedAt: Timestamp | null;
   title: string;
   description?: string;
   completionStatus: string;
-  startDate: FirestoreDate;
-  endDate: FirestoreDate;
+  startDate: Timestamp;
+  endDate: Timestamp;
   progress: number;
   goal: number;
   goalType: string;
   activityTypes: string[];
   pointReward: number;
-};
-
-export type Level = {
-  levelNum: number | string;
-  title: string;
-  nextLevelPoints: number | string;
-};
-
-export type PointRule = {
-  action: string;
-  pointsGained: number | string;
 };

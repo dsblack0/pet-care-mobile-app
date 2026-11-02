@@ -34,9 +34,9 @@ export function WeeklyChallengeCard({ challenge, usersById }: Props) {
         </Text>
         <ProgressBar value={goal > 0 ? progress / goal : 0} />
         <View style={styles.footer}>
-          {challenge.completedBy.map((id) => (
-            <View key={id} style={styles.avatar}>
-              <Text style={styles.avatarText}>{initial(usersById[id]?.name ?? '?')}</Text>
+          {challenge.completedBy.map((ref) => (
+            <View key={ref.id} style={styles.avatar}>
+              <Text style={styles.avatarText}>{initial(usersById[ref.id]?.name ?? '?')}</Text>
             </View>
           ))}
           <Text style={styles.unlock} numberOfLines={2}>

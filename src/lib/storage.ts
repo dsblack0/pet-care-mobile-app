@@ -1,9 +1,11 @@
 // Images live in Firebase Storage. Firestore documents store only the Storage path
 // (e.g. "memories/memory001.jpg"); screens resolve that path to a URL when displaying.
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
 import { useEffect, useState } from 'react';
 
-import { storage } from '../../config/firebase';
+import { app } from '../../firebaseConfig';
+
+const storage = getStorage(app);
 
 /** Upload a local file (e.g. from the image picker) to `path`. Returns the path. */
 export async function uploadImage(localUri: string, path: string): Promise<string> {

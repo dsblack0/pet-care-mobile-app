@@ -1,3 +1,4 @@
+import type { DocumentReference } from 'firebase/firestore';
 import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -10,7 +11,7 @@ import type { Memory, User } from '@/types/firestore';
 const MAX_ITEMS = 3;
 
 function subtitleFor(m: Memory, usersById: Record<string, User>): string {
-  const name = (id: string) => usersById[id]?.name ?? 'Someone';
+  const name = (ref: DocumentReference) => usersById[ref.id]?.name ?? 'Someone';
 
   if (m.activityType === 'Photo') return `${name(m.createdBy)} added a photo`;
 
