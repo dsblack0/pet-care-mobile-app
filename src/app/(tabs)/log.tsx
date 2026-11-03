@@ -21,16 +21,15 @@ import { SectionHeader } from '@/components/log/SectionHeader';
 import { WhenField } from '@/components/log/WhenField';
 import { CURRENT_USER_ID } from '@/constants/session';
 import { colors, fonts } from '@/constants/theme';
-import { fetchPetsForUser } from '@/lib/homeData';
+import { usePets } from '@/hooks/usePets';
 import { fetchFamily, fetchPointsTable, logActivity } from '@/lib/logData';
 import { selectedPetStore } from '@/lib/store';
-import type { Pet, User } from '@/types/firestore';
+import type { User } from '@/types/firestore';
 
 /** Activities where "How long?" applies. */
 const TIMED = ['Walk', 'Play', 'Train'];
 
 export default function LogScreen() {
-  const [pets, setPets] = useState<Pet[]>([]);
   const [family, setFamily] = useState<User[]>([]);
   const [pointsTable, setPointsTable] = useState<Record<string, number>>({});
 
@@ -44,16 +43,11 @@ export default function LogScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedPetId = selectedPetStore.useValue();
-  const pet = pets.find((p) => p.petId === selectedPetId) ?? pets[0] ?? null;
+  const { pets, pet } = usePets();
   const petId = pet?.petId;
 
   useEffect(() => {
-    (async () => {
-      const [p, table] = await Promise.all([fetchPetsForUser(CURRENT_USER_ID), fetchPointsTable()]);
-      setPets(p);
-      setPointsTable(table);
-    })();
+    (async () => setPointsTable(await fetchPointsTable()))();
   }, []);
 
   useEffect(() => {

@@ -61,3 +61,7 @@ export async function fetchPetHome(pet: Pet): Promise<PetHomeData> {
   // petPhotoPath is a Storage path; screens resolve it with useImageUrl when they show it.
   return { level, photoUrl: null, challenge, schedules, memories, usersById };
 }
+
+export async function fetchLevels(): Promise<Level[]> {
+  return mock.levels;
+}

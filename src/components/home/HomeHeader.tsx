@@ -1,6 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { PetSwitcherSheet } from '@/components/pet/PetSwitcherSheet';
 
 import { colors, fonts } from '@/constants/theme';
 import type { Pet } from '@/types/firestore';
@@ -15,9 +18,11 @@ type Props = {
   eyebrow?: string;
   /** Icon-only Rewards button, for screens with less room. */
   compact?: boolean;
+  /** Shown in place of the pet switcher, e.g. "Tutorials & FAQs". */
+  title?: string;
 };
 
-export function HomeHeader({ pet, pets, onSelectPet, leading, eyebrow, compact }: Props) {
+export function HomeHeader({ pet, pets, onSelectPet, leading, eyebrow, compact, title }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
@@ -25,7 +30,7 @@ export function HomeHeader({ pet, pets, onSelectPet, leading, eyebrow, compact }
       <Pressable
         style={styles.petButton}
         onPress={() => setPickerOpen(true)}
-        disabled={pets.length < 2}
+        disabled={!!title}
         accessibilityRole="button"
         accessibilityLabel="Switch pet"
       >
@@ -33,57 +38,57 @@ export function HomeHeader({ pet, pets, onSelectPet, leading, eyebrow, compact }
         <View>
           {eyebrow && <Text style={styles.eyebrow}>{eyebrow}</Text>}
           <View style={styles.petNameRow}>
-            <Text style={styles.petName}>{pet?.name ?? ''}</Text>
-            {pets.length > 1 && <Ionicons name="chevron-down" size={20} color={colors.text} />}
+            <Text style={styles.petName}>{title ?? pet?.name ?? ''}</Text>
+            {!title && <Ionicons name="chevron-down" size={20} color={colors.text} />}
           </View>
         </View>
       </Pressable>
 
       <View style={styles.actions}>
-        <Pressable style={styles.circle} accessibilityRole="button" accessibilityLabel="Help">
+        <Pressable
+          style={styles.circle}
+          onPress={() => router.push('/family/tutorials')}
+          accessibilityRole="button"
+          accessibilityLabel="Help"
+        >
           <Ionicons name="help" size={20} color={colors.primary} />
         </Pressable>
         {compact ? (
-          <Pressable style={styles.circle} accessibilityRole="button" accessibilityLabel="Rewards">
+          <Pressable
+            style={styles.circle}
+            onPress={() => router.push('/challenges/rewards')}
+            accessibilityRole="button"
+            accessibilityLabel="Rewards"
+          >
             <Ionicons name="gift" size={18} color={colors.primary} />
           </Pressable>
         ) : (
-          <Pressable style={styles.rewards} accessibilityRole="button">
+          <Pressable
+            style={styles.rewards}
+            onPress={() => router.push('/challenges/rewards')}
+            accessibilityRole="button"
+          >
             <Ionicons name="gift" size={16} color={colors.primary} />
             <Text style={styles.rewardsText}>Rewards</Text>
           </Pressable>
         )}
-        <Pressable style={styles.circle} accessibilityRole="button" accessibilityLabel="Profile">
+        <Pressable
+          style={styles.circle}
+          onPress={() => router.push('/family/profile')}
+          accessibilityRole="button"
+          accessibilityLabel="Profile"
+        >
           <Ionicons name="person" size={18} color={colors.primary} />
         </Pressable>
       </View>
 
-      <Modal
+      <PetSwitcherSheet
         visible={pickerOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPickerOpen(false)}
-      >
-        <Pressable style={styles.backdrop} onPress={() => setPickerOpen(false)}>
-          <View style={styles.sheet}>
-            {pets.map((p) => (
-              <Pressable
-                key={p.petId}
-                style={styles.sheetRow}
-                onPress={() => {
-                  setPickerOpen(false);
-                  onSelectPet(p.petId);
-                }}
-              >
-                <Text style={styles.sheetText}>{p.name}</Text>
-                {p.petId === pet?.petId && (
-                  <Ionicons name="checkmark" size={18} color={colors.primary} />
-                )}
-              </Pressable>
-            ))}
-          </View>
-        </Pressable>
-      </Modal>
+        pets={pets}
+        currentPetId={pet?.petId}
+        onSelect={onSelectPet}
+        onClose={() => setPickerOpen(false)}
+      />
     </View>
   );
 }
@@ -120,19 +125,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft,
   },
   rewardsText: { fontSize: 16, fontFamily: fonts.subheading, color: colors.primary },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  sheet: { backgroundColor: colors.surface, borderRadius: 16, paddingVertical: 8 },
-  sheetRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-  },
-  sheetText: { fontSize: 18, fontFamily: fonts.subheading, color: colors.text },
 });

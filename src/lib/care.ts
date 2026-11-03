@@ -14,7 +14,7 @@ export type CareRow = {
 // How the pet feels about today's care. Drives the animated face.
 export type PetMood = 'happy' | 'waiting' | 'calm';
 
-function partOfDay(hour: number): string {
+export function partOfDay(hour: number): string {
   if (hour < 12) return 'Morning';
   if (hour < 17) return 'Afternoon';
   return 'Evening';

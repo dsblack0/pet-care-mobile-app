@@ -3,10 +3,14 @@
 import type { DocumentReference, Timestamp } from 'firebase/firestore';
 
 export type { CareSchedule } from '../../models/careSchedules';
+export type { Invitation } from '../../models/invitations';
 export type { Level } from '../../models/levels';
 export type { Memory } from '../../models/memories';
+export type { Nudge } from '../../models/nudges';
 export type { Pet } from '../../models/pets';
 export type { Points } from '../../models/points';
+export type { Recap } from '../../models/recaps';
+export type { Reward } from '../../models/rewards';
 export type { User } from '../../models/users';
 export type { UserPet } from '../../models/userPets';
 
