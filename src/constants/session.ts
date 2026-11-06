@@ -1,3 +1,3 @@
-// No sign-in yet. This is Alex Johnson in the Firestore dummy data; replace with the
-// signed-in user's id once Firebase Auth is added.
-export const CURRENT_USER_ID = 'M7wni4bpc2E6dj45Qf3m';
+// Alex Johnson in the Firestore dummy data. Used only in the dev-only demo mode (no sign-in).
+// Everywhere else, use currentUserId() from '@/lib/auth'.
+export const DEMO_USER_ID = 'M7wni4bpc2E6dj45Qf3m';

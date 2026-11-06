@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { SectionHeader } from '@/components/log/SectionHeader';
 import { PetAvatar } from '@/components/pet/PetAvatar';
-import { CURRENT_USER_ID } from '@/constants/session';
+import { currentUserId, signOut } from '@/lib/auth';
 import { colors, fonts } from '@/constants/theme';
 import { initial } from '@/lib/format';
 import { usePets } from '@/hooks/usePets';
@@ -23,7 +23,7 @@ export default function ProfileScreen() {
   const { pets, pet } = usePets();
 
   useEffect(() => {
-    (async () => setProfile(await fetchProfile(CURRENT_USER_ID)))();
+    (async () => setProfile(await fetchProfile(currentUserId())))();
   }, [dataVersion]);
 
   const role = profile?.isOrganizer ? 'Family organizer' : 'Family member';
@@ -98,6 +98,15 @@ export default function ProfileScreen() {
             <Ionicons name="settings" size={20} color={colors.primary} />
             <Text style={styles.settingsText}>Account Settings & Privacy</Text>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </Pressable>
+
+          <Pressable
+            style={[styles.card, styles.settingsRow]}
+            onPress={signOut}
+            accessibilityRole="button"
+          >
+            <Ionicons name="log-out-outline" size={20} color={colors.openText} />
+            <Text style={styles.settingsText}>Sign out</Text>
           </Pressable>
         </ScrollView>
       )}

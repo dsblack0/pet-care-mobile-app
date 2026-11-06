@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { CURRENT_USER_ID } from '@/constants/session';
+import { currentUserId } from '@/lib/auth';
 import { fetchPetsForUser } from '@/lib/homeData';
 import { dataVersionStore, selectedPetStore } from '@/lib/store';
 import type { Pet } from '@/types/firestore';
@@ -14,7 +14,7 @@ export function usePets() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const p = await fetchPetsForUser(CURRENT_USER_ID);
+      const p = await fetchPetsForUser(currentUserId());
       if (!cancelled) setPets(p);
     })();
     return () => {

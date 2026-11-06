@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { SectionHeader } from '@/components/log/SectionHeader';
-import { CURRENT_USER_ID } from '@/constants/session';
+import { currentUserId } from '@/lib/auth';
 import { colors, fonts } from '@/constants/theme';
 import { daysLeft } from '@/lib/format';
 import { usePets } from '@/hooks/usePets';
@@ -51,7 +51,7 @@ export default function InviteScreen() {
     setSending(true);
     setError(null);
     setSentTo(null);
-    const result = await sendInvite(pet.petId, CURRENT_USER_ID, email);
+    const result = await sendInvite(pet.petId, currentUserId(), email);
     setSending(false);
     if (result.ok) {
       setSentTo(email.trim());

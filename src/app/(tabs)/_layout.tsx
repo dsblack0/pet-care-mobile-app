@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { colors } from '@/constants/theme';
+import { sessionStore } from '@/lib/auth';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -33,6 +34,9 @@ function tabIcon(filled: IconName, outline: IconName) {
 }
 
 export default function TabLayout() {
+  // Signed out or still onboarding: start at Welcome.
+  if (sessionStore.useValue() !== 'ready') return <Redirect href="/welcome" />;
+
   return (
     <Tabs
       screenOptions={{
