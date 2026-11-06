@@ -1,5 +1,12 @@
-// Data for the User Profile screen. Mock-backed like homeData/logData.
-import * as mock from '@/data/mockData';
+// Data for the User Profile screen, read from Firestore.
+import {
+  getLevels,
+  getPet,
+  getUser,
+  getUserPetsForPet,
+  getUserPetsForUser,
+  getUsersById,
+} from '@/lib/db';
 import type { Level, Pet, User } from '@/types/firestore';
 
 export type ProfilePet = {
@@ -17,23 +24,29 @@ export type ProfileData = {
 };
 
 export async function fetchProfile(userId: string): Promise<ProfileData | null> {
-  const user = mock.users.find((u) => u.userId === userId);
+  const user = await getUser(userId);
   if (!user) return null;
 
-  const links = mock.userPets.filter((up) => up.userId.id === userId);
-  const pets = links
-    .map((up) => mock.pets.find((p) => p.petId === up.petId.id))
-    .filter((p): p is Pet => !!p)
-    .map((pet) => {
-      const memberIds = mock.userPets
-        .filter((up) => up.petId.id === pet.petId && up.userId.id !== userId)
-        .map((up) => up.userId.id);
+  const [links, levels] = await Promise.all([getUserPetsForUser(userId), getLevels()]);
+  const pets = await Promise.all(
+    links.map(async (link): Promise<ProfilePet | null> => {
+      const pet = await getPet(link.petId.id);
+      if (!pet) return null;
+      const others = (await getUserPetsForPet(pet.petId))
+        .map((up) => up.userId.id)
+        .filter((id) => id !== userId);
+      const usersById = await getUsersById(others);
       return {
         pet,
-        level: mock.levels.find((l) => l.levelNum === pet.level) ?? null,
-        sharedWith: mock.users.filter((u) => memberIds.includes(u.userId)).map((u) => u.name),
+        level: levels.find((l) => l.levelNum === pet.level) ?? null,
+        sharedWith: others.map((id) => usersById[id]?.name).filter((n): n is string => !!n),
       };
-    });
+    }),
+  );
 
-  return { user, isOrganizer: links.some((up) => up.role === 'owner'), pets };
+  return {
+    user,
+    isOrganizer: links.some((up) => up.role === 'owner'),
+    pets: pets.filter((p): p is ProfilePet => !!p),
+  };
 }

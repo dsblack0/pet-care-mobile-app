@@ -1,8 +1,16 @@
-// Data access for the Home screen. Currently backed by mock data; each function is async
-// so the bodies can be swapped for Firestore queries without touching the UI.
+// Data access for the Home screen, read from Firestore.
 import type { Timestamp } from 'firebase/firestore';
 
-import * as mock from '@/data/mockData';
+import {
+  getChallengesForPet,
+  getLevels,
+  getMemoriesForPet,
+  getPet,
+  getSchedulesForPet,
+  getUser,
+  getUserPetsForUser,
+  getUsersById,
+} from '@/lib/db';
 import type { CareSchedule, Challenge, Level, Memory, Pet, User } from '@/types/firestore';
 
 export function toDate(value: Timestamp): Date {
@@ -10,21 +18,18 @@ export function toDate(value: Timestamp): Date {
 }
 
 export async function fetchUser(userId: string): Promise<User | null> {
-  return mock.users.find((u) => u.userId === userId) ?? null;
+  return getUser(userId);
 }
 
 export async function fetchUsers(userIds: string[]): Promise<Record<string, User>> {
-  const byId: Record<string, User> = {};
-  for (const id of new Set(userIds)) {
-    const user = await fetchUser(id);
-    if (user) byId[id] = user;
-  }
-  return byId;
+  return getUsersById(userIds);
 }
 
 export async function fetchPetsForUser(userId: string): Promise<Pet[]> {
-  const petIds = mock.userPets.filter((up) => up.userId.id === userId).map((up) => up.petId.id);
-  return mock.pets.filter((p) => petIds.includes(p.petId));
+  const links = await getUserPetsForUser(userId);
+  const pets = await Promise.all(links.map((l) => getPet(l.petId.id)));
+  // Alphabetical so the default (first) pet is the same every time.
+  return pets.filter((p): p is Pet => !!p).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export type PetHomeData = {
@@ -37,21 +42,18 @@ export type PetHomeData = {
 };
 
 export async function fetchPetHome(pet: Pet): Promise<PetHomeData> {
-  const level = mock.levels.find((l) => l.levelNum === pet.level) ?? null;
+  const [levels, challenges, schedules, memories] = await Promise.all([
+    getLevels(),
+    getChallengesForPet(pet.petId),
+    getSchedulesForPet(pet.petId),
+    getMemoriesForPet(pet.petId),
+  ]);
+  const level = levels.find((l) => l.levelNum === pet.level) ?? null;
 
   const challenge =
-    mock.challenges
-      .filter((c) => c.petId.id === pet.petId && c.completionStatus === 'in_progress')
+    challenges
+      .filter((c) => c.completionStatus === 'in_progress')
       .sort((a, b) => toDate(a.endDate).getTime() - toDate(b.endDate).getTime())[0] ?? null;
-
-  const schedules = mock.careSchedules
-    .filter((s) => s.petId.id === pet.petId)
-    // Schedules without a time go last.
-    .sort((a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99'));
-
-  const memories = mock.memories
-    .filter((m) => m.petId.id === pet.petId)
-    .sort((a, b) => toDate(b.occurredAt).getTime() - toDate(a.occurredAt).getTime());
 
   const usersById = await fetchUsers([
     ...(challenge?.participants ?? []).map((r) => r.id),
@@ -63,5 +65,5 @@ export async function fetchPetHome(pet: Pet): Promise<PetHomeData> {
 }
 
 export async function fetchLevels(): Promise<Level[]> {
-  return mock.levels;
+  return getLevels();
 }

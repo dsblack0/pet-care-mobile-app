@@ -1,8 +1,8 @@
-// Data for the Memories tab and the monthly recap. Mock-backed like the other data files;
-// recaps are built with the team's models/recaps and only saved when the user taps Save.
-import { collection, doc, Timestamp } from 'firebase/firestore';
+// Data for the Memories tab and the monthly recap, backed by Firestore. Recaps are built with
+// the team's models/recaps and only saved when the user taps Save.
+import { collection, doc, setDoc, Timestamp } from 'firebase/firestore';
 
-import * as mock from '@/data/mockData';
+import { getMemoriesForPet, getUsersById } from '@/lib/db';
 import { toDate } from '@/lib/homeData';
 import { uploadImage } from '@/lib/storage';
 import { dataVersionStore } from '@/lib/store';
@@ -33,9 +33,7 @@ function monthRange(now = new Date()) {
 
 export async function fetchMemoriesPage(petId: string): Promise<MemoriesPage> {
   const now = new Date();
-  const memories = mock.memories
-    .filter((m) => m.petId.id === petId)
-    .sort((a, b) => b.occurredAt.toMillis() - a.occurredAt.toMillis());
+  const memories = await getMemoriesForPet(petId);
 
   const yearAgo =
     memories.find((m) => {
@@ -53,7 +51,9 @@ export async function fetchMemoriesPage(petId: string): Promise<MemoriesPage> {
     return d >= start && d <= end;
   });
 
-  const usersById = Object.fromEntries(mock.users.map((u) => [u.userId, u]));
+  const usersById = await getUsersById(
+    memories.flatMap((m) => [m.createdBy.id, ...m.participants.map((p) => p.id)]),
+  );
   return { memories, usersById, yearAgo, thisMonth };
 }
 
@@ -68,17 +68,14 @@ export type RecapDraft = {
 /** Select this month's memories for a recap. Nothing is saved until saveRecap. */
 export async function buildRecapDraft(petId: string): Promise<RecapDraft> {
   const { start, end } = monthRange();
-  const memories = mock.memories
-    .filter((m) => {
-      const d = toDate(m.occurredAt);
-      return m.petId.id === petId && d >= start && d <= end;
-    })
-    .sort((a, b) => b.occurredAt.toMillis() - a.occurredAt.toMillis());
+  const memories = (await getMemoriesForPet(petId)).filter((m) => {
+    const d = toDate(m.occurredAt);
+    return d >= start && d <= end;
+  });
 
   const ids = [...new Set(memories.flatMap((m) => m.participants.map((p) => p.id)))];
-  const people = ids
-    .map((id) => mock.users.find((u) => u.userId === id))
-    .filter((u): u is User => !!u);
+  const usersById = await getUsersById(ids);
+  const people = ids.map((id) => usersById[id]).filter((u): u is User => !!u);
 
   return { start, end, memories, people };
 }
@@ -110,7 +107,8 @@ export async function saveRecap(input: {
     input.draft.memories.map((m) => getMemoryReference(m.memoryId)),
     exportPath,
   );
-  mock.recaps.push({ recapId, ...recap });
+  // setDoc (not saveRecap's addDoc) so the document uses the id the image is named after.
+  await setDoc(doc(db, 'recaps', recapId), recap);
   dataVersionStore.set(dataVersionStore.get() + 1);
   return recapId;
 }

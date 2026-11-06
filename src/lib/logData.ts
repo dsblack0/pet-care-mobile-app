@@ -1,9 +1,8 @@
-// Data access for the Log Activity screen. Memories are built with the team's models/ and
-// firebaseServices/ helpers. Reads and the final save still use mock data until Firestore is
-// seeded; then swap the mock push for saveMemory().
-import { collection, doc, Timestamp } from 'firebase/firestore';
+// Data access for the Log Activity screen, backed by Firestore. Memories are built with the
+// team's models/ and firebaseServices/ helpers.
+import { collection, doc, setDoc, Timestamp } from 'firebase/firestore';
 
-import * as mock from '@/data/mockData';
+import { getFamily, getMemoriesForPet, getPoints, getSchedulesForPet } from '@/lib/db';
 import { toDate } from '@/lib/homeData';
 import { isSameDay } from '@/lib/format';
 import { uploadImage } from '@/lib/storage';
@@ -19,13 +18,12 @@ import { createMemory } from '../../models/memories';
 
 /** Family for a pet: userPets by petId -> users. */
 export async function fetchFamily(petId: string): Promise<User[]> {
-  const ids = mock.userPets.filter((up) => up.petId.id === petId).map((up) => up.userId.id);
-  return mock.users.filter((u) => ids.includes(u.userId));
+  return getFamily(petId);
 }
 
 /** points.action -> pointsGained. */
 export async function fetchPointsTable(): Promise<Record<string, number>> {
-  return Object.fromEntries(mock.points.map((p) => [p.action, p.pointsGained]));
+  return Object.fromEntries((await getPoints()).map((p) => [p.action, p.pointsGained]));
 }
 
 /** What the Log Activity form collects. IDs are plain strings; refs are made here. */
@@ -44,16 +42,17 @@ export type LogActivityInput = {
 };
 
 /** Today's schedule for this activity that hasn't been logged yet, if any. */
-function findScheduleToLink(petId: string, activityType: string, occurredAt: Date) {
+async function findScheduleToLink(petId: string, activityType: string, occurredAt: Date) {
+  const [memories, schedules] = await Promise.all([
+    getMemoriesForPet(petId),
+    getSchedulesForPet(petId),
+  ]);
   const loggedIds = new Set(
-    mock.memories
-      .filter((m) => m.petId.id === petId && isSameDay(toDate(m.occurredAt), occurredAt))
+    memories
+      .filter((m) => isSameDay(toDate(m.occurredAt), occurredAt))
       .map((m) => m.careScheduleId?.id),
   );
-  return mock.careSchedules.find(
-    (s) =>
-      s.petId.id === petId && s.activityType === activityType && !loggedIds.has(s.careScheduleId),
-  );
+  return schedules.find((s) => s.activityType === activityType && !loggedIds.has(s.careScheduleId));
 }
 
 export async function logActivity(input: LogActivityInput): Promise<Memory> {
@@ -65,7 +64,7 @@ export async function logActivity(input: LogActivityInput): Promise<Memory> {
     ? await uploadImage(input.localPhotoUri, `memories/${memoryId}.jpg`)
     : null;
 
-  const schedule = findScheduleToLink(input.petId, input.activityType, input.occurredAt);
+  const schedule = await findScheduleToLink(input.petId, input.activityType, input.occurredAt);
 
   const newMemory = createMemory(
     getPetReference(input.petId),
@@ -82,8 +81,9 @@ export async function logActivity(input: LogActivityInput): Promise<Memory> {
     input.bonusPoints,
   );
 
+  // setDoc (not saveMemory's addDoc) so the document uses the id the photo is named after.
+  await setDoc(doc(db, 'memories', memoryId), newMemory);
   const memory: Memory = { memoryId, ...newMemory };
-  mock.memories.push(memory);
   dataVersionStore.set(dataVersionStore.get() + 1);
   return memory;
 }

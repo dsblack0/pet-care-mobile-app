@@ -1,11 +1,17 @@
 // Data for the Family tab: this week's shared activity, each member's contributions, and today's
-// care coverage. Mock-backed like the other data files.
-import * as mock from '@/data/mockData';
+// care coverage. Read from Firestore.
 import { getCareRows, partOfDay, type CareStatus } from '@/lib/care';
+import {
+  getChallengesForPet,
+  getFamily,
+  getMemoriesForPet,
+  getSchedulesForPet,
+  getUsersById,
+} from '@/lib/db';
 import { toDate } from '@/lib/homeData';
 import { dataVersionStore } from '@/lib/store';
 import type { CareSchedule, Memory, User } from '@/types/firestore';
-import { getPetReference, getUserReference } from '../../firebaseServices/nudgesService';
+import { getPetReference, getUserReference, saveNudge } from '../../firebaseServices/nudgesService';
 import { createNudge } from '../../models/nudges';
 
 /** Monday 00:00 of the current week, local time. */
@@ -72,18 +78,19 @@ export async function fetchFamilyWeek(petId: string): Promise<FamilyWeek> {
   const now = new Date();
   const weekStart = startOfWeek(now);
 
-  const all = mock.memories.filter((m) => m.petId.id === petId);
+  const [all, allChallenges, family, schedules] = await Promise.all([
+    getMemoriesForPet(petId),
+    getChallengesForPet(petId),
+    getFamily(petId),
+    getSchedulesForPet(petId),
+  ]);
   const week = all.filter((m) => toDate(m.occurredAt) >= weekStart);
 
-  const challenges = mock.challenges.filter(
-    (c) => c.petId.id === petId && c.completionStatus === 'in_progress',
-  );
+  const challenges = allChallenges.filter((c) => c.completionStatus === 'in_progress');
   const goal = challenges.reduce((sum, c) => sum + c.goal, 0);
   const progress = challenges.reduce((sum, c) => sum + Math.min(c.progress, c.goal), 0);
 
-  const memberIds = mock.userPets.filter((up) => up.petId.id === petId).map((up) => up.userId.id);
-  const family = mock.users.filter((u) => memberIds.includes(u.userId));
-  const usersById = Object.fromEntries(mock.users.map((u) => [u.userId, u]));
+  const usersById = await getUsersById(all.map((m) => m.createdBy.id));
 
   const members = family.map((user) => {
     const involved = (m: Memory) => m.participants.some((p) => p.id === user.userId);
@@ -95,7 +102,6 @@ export async function fetchFamilyWeek(petId: string): Promise<FamilyWeek> {
     };
   });
 
-  const schedules = mock.careSchedules.filter((s) => s.petId.id === petId);
   const coverage = getCareRows(schedules, all, usersById, now).map((row) => {
     const hour = row.schedule.scheduledTime
       ? Number(row.schedule.scheduledTime.split(':')[0])
@@ -159,6 +165,6 @@ export async function sendNudge(
     getUserReference(recipientId),
     `Spend some time with ${petName} today!`,
   );
-  mock.nudges.push({ nudgeId: `nudge${mock.nudges.length + 1}`, ...nudge, deliveryStatus: 'sent' });
+  await saveNudge(nudge);
   dataVersionStore.set(dataVersionStore.get() + 1);
 }

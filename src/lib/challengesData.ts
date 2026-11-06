@@ -1,9 +1,20 @@
 // Data for the Challenges tab, a single challenge's progress, and Rewards / Pet XP.
-// Mock-backed like the other data files.
-import * as mock from '@/data/mockData';
+// Read from Firestore.
+import { doc, updateDoc } from 'firebase/firestore';
+
+import {
+  getChallenge,
+  getChallengesForPet,
+  getLevels,
+  getMemoriesForPet,
+  getPet,
+  getRewards,
+  getUsersById,
+} from '@/lib/db';
 import { toDate } from '@/lib/homeData';
 import { dataVersionStore } from '@/lib/store';
 import type { Challenge, Level, Memory, Pet, Reward, User } from '@/types/firestore';
+import { db } from '../../firebaseConfig';
 
 /** How a challenge is described on cards, from its goalType / jointActivity. */
 export function challengeKind(c: Challenge): { label: string; unit: string } {
@@ -23,7 +34,8 @@ export type ChallengesPage = {
 };
 
 export async function fetchChallenges(petId: string): Promise<ChallengesPage> {
-  const mine = mock.challenges.filter((c) => c.petId.id === petId);
+  const mine = await getChallengesForPet(petId);
+  const usersById = await getUsersById(mine.flatMap((c) => c.completedBy.map((r) => r.id)));
   return {
     active: mine
       .filter((c) => c.completionStatus === 'in_progress')
@@ -31,7 +43,7 @@ export async function fetchChallenges(petId: string): Promise<ChallengesPage> {
     completed: mine
       .filter((c) => c.completionStatus === 'completed')
       .sort((a, b) => (b.completedAt?.toMillis() ?? 0) - (a.completedAt?.toMillis() ?? 0)),
-    usersById: Object.fromEntries(mock.users.map((u) => [u.userId, u])),
+    usersById,
   };
 }
 
@@ -45,25 +57,19 @@ export type ContributionRow = {
 export type ChallengeDetail = { challenge: Challenge; rows: ContributionRow[] };
 
 export async function fetchChallengeDetail(challengeId: string): Promise<ChallengeDetail | null> {
-  const challenge = mock.challenges.find((c) => c.challengeId === challengeId);
+  const challenge = await getChallenge(challengeId);
   if (!challenge) return null;
 
   const start = toDate(challenge.startDate);
   const end = toDate(challenge.endDate);
-  const matching = mock.memories
-    .filter((m) => {
-      const d = toDate(m.occurredAt);
-      return (
-        m.petId.id === challenge.petId.id &&
-        challenge.activityTypes.includes(m.activityType) &&
-        d >= start &&
-        d <= end
-      );
-    })
-    .sort((a, b) => b.occurredAt.toMillis() - a.occurredAt.toMillis());
+  const matching = (await getMemoriesForPet(challenge.petId.id)).filter((m) => {
+    const d = toDate(m.occurredAt);
+    return challenge.activityTypes.includes(m.activityType) && d >= start && d <= end;
+  });
 
+  const usersById = await getUsersById(challenge.participants.map((r) => r.id));
   const rows = challenge.participants
-    .map((ref) => mock.users.find((u) => u.userId === ref.id))
+    .map((ref) => usersById[ref.id])
     .filter((u): u is User => !!u)
     .map((user) => ({
       user,
@@ -76,9 +82,7 @@ export async function fetchChallengeDetail(challengeId: string): Promise<Challen
 
 /** Stop an active challenge. It stays in the data with completionStatus "cancelled". */
 export async function cancelChallenge(challengeId: string): Promise<void> {
-  const challenge = mock.challenges.find((c) => c.challengeId === challengeId);
-  if (!challenge) return;
-  challenge.completionStatus = 'cancelled';
+  await updateDoc(doc(db, 'challenges', challengeId), { completionStatus: 'cancelled' });
   dataVersionStore.set(dataVersionStore.get() + 1);
 }
 
@@ -102,11 +106,11 @@ function levelForPoints(levels: Level[], points: number): number {
 }
 
 export async function fetchRewards(petId: string): Promise<RewardsPage | null> {
-  const pet = mock.pets.find((p) => p.petId === petId);
+  const [pet, levels, rewards] = await Promise.all([getPet(petId), getLevels(), getRewards()]);
   if (!pet) return null;
-  const level = mock.levels.find((l) => l.levelNum === pet.level) ?? null;
-  const nextLevel = mock.levels.find((l) => l.levelNum === pet.level + 1) ?? null;
-  const sorted = [...mock.rewards].sort((a, b) => a.pointRequirement - b.pointRequirement);
+  const level = levels.find((l) => l.levelNum === pet.level) ?? null;
+  const nextLevel = levels.find((l) => l.levelNum === pet.level + 1) ?? null;
+  const sorted = [...rewards].sort((a, b) => a.pointRequirement - b.pointRequirement);
   return {
     pet,
     level,
@@ -114,6 +118,6 @@ export async function fetchRewards(petId: string): Promise<RewardsPage | null> {
     unlocked: sorted.filter((r) => pet.totalPoints >= r.pointRequirement),
     upcoming: sorted
       .filter((r) => pet.totalPoints < r.pointRequirement)
-      .map((reward) => ({ reward, level: levelForPoints(mock.levels, reward.pointRequirement) })),
+      .map((reward) => ({ reward, level: levelForPoints(levels, reward.pointRequirement) })),
   };
 }
