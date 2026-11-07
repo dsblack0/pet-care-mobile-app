@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { ProgressBar } from '@/components/home/ProgressBar';
 import { SectionHeader } from '@/components/log/SectionHeader';
-import { CURRENT_USER_ID } from '@/constants/session';
+import { currentUserId } from '@/lib/auth';
 import { colors, fonts } from '@/constants/theme';
 import type { CareStatus } from '@/lib/care';
 import {
@@ -52,13 +52,13 @@ export default function FamilyScreen() {
 
   const nudge = async (recipientId: string) => {
     if (!pet) return;
-    await sendNudge(pet.petId, CURRENT_USER_ID, recipientId, pet.name);
+    await sendNudge(pet.petId, currentUserId(), recipientId, pet.name);
     setNudged((cur) => [...cur, recipientId]);
   };
 
   // You first, then everyone else.
   const members = [...(week?.members ?? [])].sort((a, b) =>
-    a.user.userId === CURRENT_USER_ID ? -1 : b.user.userId === CURRENT_USER_ID ? 1 : 0,
+    a.user.userId === currentUserId() ? -1 : b.user.userId === currentUserId() ? 1 : 0,
   );
 
   const meta = week
@@ -115,7 +115,7 @@ export default function FamilyScreen() {
                   key={m.user.userId}
                   member={m}
                   color={MEMBER_COLORS[i % MEMBER_COLORS.length]}
-                  isYou={m.user.userId === CURRENT_USER_ID}
+                  isYou={m.user.userId === currentUserId()}
                   nudged={nudged.includes(m.user.userId)}
                   onNudge={() => nudge(m.user.userId)}
                   last={i === members.length - 1}

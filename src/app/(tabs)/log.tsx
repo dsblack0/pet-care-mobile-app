@@ -19,7 +19,7 @@ import { MemoryCard } from '@/components/log/MemoryCard';
 import { ParticipantsCard } from '@/components/log/ParticipantsCard';
 import { SectionHeader } from '@/components/log/SectionHeader';
 import { WhenField } from '@/components/log/WhenField';
-import { CURRENT_USER_ID } from '@/constants/session';
+import { currentUserId } from '@/lib/auth';
 import { colors, fonts } from '@/constants/theme';
 import { usePets } from '@/hooks/usePets';
 import { fetchFamily, fetchPointsTable, logActivity } from '@/lib/logData';
@@ -37,7 +37,7 @@ export default function LogScreen() {
   const [duration, setDuration] = useState<number | 'custom'>(30);
   const [customMinutes, setCustomMinutes] = useState('');
   const [minutesAgo, setMinutesAgo] = useState(0);
-  const [participants, setParticipants] = useState<string[]>([CURRENT_USER_ID]);
+  const [participants, setParticipants] = useState<string[]>(() => [currentUserId()]);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -60,7 +60,7 @@ export default function LogScreen() {
     setDuration(30);
     setCustomMinutes('');
     setMinutesAgo(0);
-    setParticipants([CURRENT_USER_ID]);
+    setParticipants([currentUserId()]);
     setPhotoUri(null);
     setCaption('');
     setError(null);
@@ -69,7 +69,7 @@ export default function LogScreen() {
   const selectPet = (id: string) => {
     if (id === petId) return;
     selectedPetStore.set(id);
-    setParticipants([CURRENT_USER_ID]);
+    setParticipants([currentUserId()]);
   };
 
   const toggleParticipant = (userId: string) =>
@@ -91,7 +91,7 @@ export default function LogScreen() {
     try {
       await logActivity({
         petId: pet.petId,
-        createdBy: CURRENT_USER_ID,
+        createdBy: currentUserId(),
         activityType: activity,
         occurredAt: new Date(Date.now() - minutesAgo * 60_000),
         participants,
@@ -113,7 +113,7 @@ export default function LogScreen() {
   // "Walk · 30 min · with Leah · estimated +25 Points"
   const activityLabel = ACTIVITIES.find((a) => a.type === activity)?.label;
   const others = family
-    .filter((u) => u.userId !== CURRENT_USER_ID && participants.includes(u.userId))
+    .filter((u) => u.userId !== currentUserId() && participants.includes(u.userId))
     .map((u) => u.name);
   const summary = [
     activityLabel ?? 'Pick an activity',
@@ -160,7 +160,7 @@ export default function LogScreen() {
             <SectionHeader title="Who participated?" hint="Select all that apply" />
             <ParticipantsCard
               family={family}
-              currentUserId={CURRENT_USER_ID}
+              currentUserId={currentUserId()}
               selected={participants}
               onToggle={toggleParticipant}
             />

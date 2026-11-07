@@ -16,14 +16,14 @@ import { TodayCard } from '@/components/home/TodayCard';
 import { WeeklyChallengeCard } from '@/components/home/WeeklyChallengeCard';
 import { PetFace } from '@/components/pet/PetFace';
 import { colors, fonts } from '@/constants/theme';
-import { CURRENT_USER_ID } from '@/constants/session';
+import { currentUserId } from '@/lib/auth';
 import { useHomeData } from '@/hooks/useHomeData';
 import { getCareRows, getMood, getPetLine } from '@/lib/care';
 
 const BOTTOM_SLOP = 24;
 
 export default function HomeScreen() {
-  const { user, pets, pet, data, loading, error, selectPet } = useHomeData(CURRENT_USER_ID);
+  const { user, pets, pet, data, loading, error, selectPet } = useHomeData(currentUserId());
 
   const scrollY = useSharedValue(0);
   const atBottom = useSharedValue(0);

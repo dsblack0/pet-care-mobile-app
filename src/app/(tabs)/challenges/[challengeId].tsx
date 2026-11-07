@@ -8,7 +8,7 @@ import { ChallengeIcon } from '@/components/challenges/ChallengeIcon';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { ProgressBar } from '@/components/home/ProgressBar';
 import { SectionHeader } from '@/components/log/SectionHeader';
-import { CURRENT_USER_ID } from '@/constants/session';
+import { currentUserId } from '@/lib/auth';
 import { colors, fonts } from '@/constants/theme';
 import { usePets } from '@/hooks/usePets';
 import {
@@ -158,7 +158,7 @@ function MemberRow({
       </View>
       <View style={styles.flex}>
         <Text style={styles.name}>
-          {row.user.userId === CURRENT_USER_ID ? 'You' : row.user.name}
+          {row.user.userId === currentUserId() ? 'You' : row.user.name}
         </Text>
         <Text style={styles.muted}>{line}</Text>
       </View>

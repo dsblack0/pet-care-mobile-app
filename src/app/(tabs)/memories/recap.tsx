@@ -17,7 +17,7 @@ import { captureRef } from 'react-native-view-shot';
 
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { ACTIVITY_TAG, MemoryPhoto } from '@/components/memories/MemoryPhoto';
-import { CURRENT_USER_ID } from '@/constants/session';
+import { currentUserId } from '@/lib/auth';
 import { colors, fonts } from '@/constants/theme';
 import { usePets } from '@/hooks/usePets';
 import { initial } from '@/lib/format';
@@ -67,7 +67,7 @@ export default function RecapScreen() {
     try {
       await saveRecap({
         petId: pet.petId,
-        createdBy: CURRENT_USER_ID,
+        createdBy: currentUserId(),
         title: title.trim(),
         caption: caption.trim(),
         draft,
