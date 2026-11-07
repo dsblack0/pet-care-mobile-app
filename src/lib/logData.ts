@@ -1,6 +1,6 @@
 // Data access for the Log Activity screen, backed by Firestore. Memories are built with the
 // team's models/ and firebaseServices/ helpers.
-import { collection, doc, setDoc, Timestamp } from 'firebase/firestore';
+import { collection, doc, GeoPoint, setDoc, Timestamp } from 'firebase/firestore';
 
 import { getFamily, getMemoriesForPet, getPoints, getSchedulesForPet } from '@/lib/db';
 import { toDate } from '@/lib/homeData';
@@ -37,6 +37,8 @@ export type LogActivityInput = {
   description?: string;
   /** Local image from the picker. Uploaded to Storage; only its path is saved. */
   localPhotoUri?: string;
+  /** Where it happened, if the user added their location. */
+  location?: { latitude: number; longitude: number };
   basePoints: number;
   bonusPoints: number;
 };
@@ -74,7 +76,7 @@ export async function logActivity(input: LogActivityInput): Promise<Memory> {
     input.activityType,
     input.participants.map(getUserReference),
     photoPath,
-    null,
+    input.location ? new GeoPoint(input.location.latitude, input.location.longitude) : null,
     schedule ? getCareScheduleReference(schedule.careScheduleId) : null,
     input.durationMinutes ?? null,
     input.basePoints,

@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { ACTIVITIES, ActivityGrid } from '@/components/log/ActivityGrid';
 import { DurationPicker } from '@/components/log/DurationPicker';
+import { LocationCard } from '@/components/log/LocationCard';
 import { MemoryCard } from '@/components/log/MemoryCard';
 import { ParticipantsCard } from '@/components/log/ParticipantsCard';
 import { SectionHeader } from '@/components/log/SectionHeader';
@@ -22,6 +23,7 @@ import { WhenField } from '@/components/log/WhenField';
 import { CURRENT_USER_ID } from '@/constants/session';
 import { colors, fonts } from '@/constants/theme';
 import { usePets } from '@/hooks/usePets';
+import type { Place } from '@/lib/location';
 import { fetchFamily, fetchPointsTable, logActivity } from '@/lib/logData';
 import { selectedPetStore } from '@/lib/store';
 import type { User } from '@/types/firestore';
@@ -38,6 +40,7 @@ export default function LogScreen() {
   const [customMinutes, setCustomMinutes] = useState('');
   const [minutesAgo, setMinutesAgo] = useState(0);
   const [participants, setParticipants] = useState<string[]>([CURRENT_USER_ID]);
+  const [place, setPlace] = useState<Place | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -61,6 +64,7 @@ export default function LogScreen() {
     setCustomMinutes('');
     setMinutesAgo(0);
     setParticipants([CURRENT_USER_ID]);
+    setPlace(null);
     setPhotoUri(null);
     setCaption('');
     setError(null);
@@ -98,6 +102,7 @@ export default function LogScreen() {
         durationMinutes: minutes,
         description: caption.trim() || undefined,
         localPhotoUri: photoUri ?? undefined,
+        location: place ?? undefined,
         basePoints,
         bonusPoints,
       });
@@ -164,6 +169,11 @@ export default function LogScreen() {
               selected={participants}
               onToggle={toggleParticipant}
             />
+          </View>
+
+          <View>
+            <SectionHeader title="Where were you?" hint="Optional" />
+            <LocationCard place={place} onChange={setPlace} />
           </View>
 
           <View>

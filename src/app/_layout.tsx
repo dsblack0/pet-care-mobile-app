@@ -19,6 +19,8 @@ export default function RootLayout() {
     <>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* Opened from the invite link: petcare://invite/<invitationId> */}
+        <Stack.Screen name="invite/[invitationId]" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="dark" />
     </>
