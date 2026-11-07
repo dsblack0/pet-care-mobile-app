@@ -21,10 +21,10 @@ export default function RootLayout() {
 
   return (
     <>
-      {/* The (tabs) and (onboarding) layouts redirect to each other based on the session. */}
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="(onboarding)" />
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* Opened from the invite link: petcare://invite/<invitationId> */}
+        <Stack.Screen name="invite/[invitationId]" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="dark" />
     </>

@@ -155,7 +155,11 @@ export default function ChallengesScreen() {
             </View>
           )}
 
-          <Pressable style={[styles.card, styles.settingsRow]} accessibilityRole="button">
+          <Pressable
+            style={[styles.card, styles.settingsRow]}
+            onPress={() => router.push('/challenges/preferences')}
+            accessibilityRole="button"
+          >
             <Ionicons name="settings-outline" size={20} color={colors.text} />
             <Text style={styles.settingsText}>Set Challenge Preferences</Text>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
