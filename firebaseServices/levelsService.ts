@@ -1,22 +1,13 @@
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  limit
-} from "firebase/firestore";
+import { collection, query, where, getDocs, limit } from "firebase/firestore";
 
 import { db } from "../firebaseConfig";
 import { Level } from "../models/levels";
 
-export async function getLevel(
-  levelNum: number
-): Promise<Level | null> {
-
+export async function getLevel(levelNum: number): Promise<Level | null> {
   const q = query(
     collection(db, "levels"),
     where("levelNum", "==", levelNum),
-    limit(1)
+    limit(1),
   );
 
   const querySnapshot = await getDocs(q);

@@ -1,8 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-import { fetchPetHome, fetchPetsForUser, fetchUser, type PetHomeData } from '@/lib/homeData';
-import { dataVersionStore, selectedPetStore } from '@/lib/store';
-import type { Pet, User } from '@/types/firestore';
+import {
+  fetchPetHome,
+  fetchPetsForUser,
+  fetchUser,
+  type PetHomeData,
+} from "@/lib/homeData";
+import { dataVersionStore, selectedPetStore } from "@/lib/store";
+import type { Pet, User } from "@/types/firestore";
 
 export function useHomeData(userId: string) {
   const [user, setUser] = useState<User | null>(null);
@@ -19,7 +24,10 @@ export function useHomeData(userId: string) {
 
     (async () => {
       try {
-        const [u, p] = await Promise.all([fetchUser(userId), fetchPetsForUser(userId)]);
+        const [u, p] = await Promise.all([
+          fetchUser(userId),
+          fetchPetsForUser(userId),
+        ]);
         // Until a pet is picked, show the first one.
         const target = p.find((x) => x.petId === selectedPetId) ?? p[0] ?? null;
         const home = target ? await fetchPetHome(target) : null;

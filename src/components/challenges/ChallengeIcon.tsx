@@ -1,9 +1,9 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, View } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { StyleSheet, View } from "react-native";
 
-import { ActivityIcon } from '@/components/home/ActivityIcon';
-import { colors } from '@/constants/theme';
-import type { Challenge } from '@/types/firestore';
+import { ActivityIcon } from "@/components/home/ActivityIcon";
+import { colors } from "@/constants/theme";
+import type { Challenge } from "@/types/firestore";
 
 /** Together challenges get a people icon; others use their first activity's icon. */
 export function ChallengeIcon({ challenge }: { challenge: Challenge }) {
@@ -14,7 +14,7 @@ export function ChallengeIcon({ challenge }: { challenge: Challenge }) {
       </View>
     );
   }
-  return <ActivityIcon activityType={challenge.activityTypes[0] ?? 'Other'} />;
+  return <ActivityIcon activityType={challenge.activityTypes[0] ?? "Other"} />;
 }
 
 const styles = StyleSheet.create({
@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 14,
     backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

@@ -1,13 +1,13 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Redirect, Tabs } from 'expo-router';
-import { useEffect, useState, type ComponentProps } from 'react';
-import { StyleSheet, View } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Redirect, Tabs } from "expo-router";
+import { useEffect, useState, type ComponentProps } from "react";
+import { StyleSheet, View } from "react-native";
 
-import { colors } from '@/constants/theme';
-import { sessionStore } from '@/lib/auth';
-import { pendingInvitation } from '@/lib/pendingInvite';
+import { colors } from "@/constants/theme";
+import { sessionStore } from "@/lib/auth";
+import { pendingInvitation } from "@/lib/pendingInvite";
 
-type IconName = ComponentProps<typeof Ionicons>['name'];
+type IconName = ComponentProps<typeof Ionicons>["name"];
 
 // Filled when selected, outlined otherwise.
 function TabIcon({
@@ -38,19 +38,31 @@ function OnboardingRedirect() {
   const [token, setToken] = useState<string | null | undefined>(undefined);
   useEffect(() => {
     let cancelled = false;
-    void pendingInvitation().then(value => { if (!cancelled) setToken(value); });
-    return () => { cancelled = true; };
+    void pendingInvitation().then((value) => {
+      if (!cancelled) setToken(value);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
   if (token === undefined) return null;
-  if (token) return <Redirect href={{ pathname: '/invite/[invitationId]', params: { invitationId: token } }} />;
+  if (token)
+    return (
+      <Redirect
+        href={{
+          pathname: "/invite/[invitationId]",
+          params: { invitationId: token },
+        }}
+      />
+    );
   return <Redirect href="/pet" />;
 }
 
 export default function TabLayout() {
   const session = sessionStore.useValue();
-  if (session === 'loading') return null;
-  if (session === 'onboarding') return <OnboardingRedirect />;
-  if (session !== 'ready') return <Redirect href="/welcome" />;
+  if (session === "loading") return null;
+  if (session === "onboarding") return <OnboardingRedirect />;
+  if (session !== "ready") return <Redirect href="/welcome" />;
 
   return (
     <Tabs
@@ -58,21 +70,27 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: { backgroundColor: colors.background, borderTopColor: colors.border },
+        tabBarStyle: {
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
+        },
       }}
     >
       <Tabs.Screen
         name="index"
-        options={{ title: 'Home', tabBarIcon: tabIcon('home', 'home-outline') }}
+        options={{ title: "Home", tabBarIcon: tabIcon("home", "home-outline") }}
       />
       <Tabs.Screen
         name="challenges"
-        options={{ title: 'Challenges', tabBarIcon: tabIcon('flag', 'flag-outline') }}
+        options={{
+          title: "Challenges",
+          tabBarIcon: tabIcon("flag", "flag-outline"),
+        }}
       />
       <Tabs.Screen
         name="log"
         options={{
-          title: 'Log',
+          title: "Log",
           tabBarIcon: () => (
             <View style={styles.logButton}>
               <Ionicons name="add" size={24} color="#FFFFFF" />
@@ -82,11 +100,17 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="memories"
-        options={{ title: 'Memories', tabBarIcon: tabIcon('images', 'images-outline') }}
+        options={{
+          title: "Memories",
+          tabBarIcon: tabIcon("images", "images-outline"),
+        }}
       />
       <Tabs.Screen
         name="family"
-        options={{ title: 'Family', tabBarIcon: tabIcon('people', 'people-outline') }}
+        options={{
+          title: "Family",
+          tabBarIcon: tabIcon("people", "people-outline"),
+        }}
       />
     </Tabs>
   );
@@ -98,7 +122,7 @@ const styles = StyleSheet.create({
     height: 34,
     borderRadius: 17,
     backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

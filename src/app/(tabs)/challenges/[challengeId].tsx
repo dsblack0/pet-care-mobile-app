@@ -1,32 +1,32 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ChallengeIcon } from '@/components/challenges/ChallengeIcon';
-import { HomeHeader } from '@/components/home/HomeHeader';
-import { ProgressBar } from '@/components/home/ProgressBar';
-import { SectionHeader } from '@/components/log/SectionHeader';
-import { currentUserId } from '@/lib/auth';
-import { colors, fonts } from '@/constants/theme';
-import { usePets } from '@/hooks/usePets';
+import { ChallengeIcon } from "@/components/challenges/ChallengeIcon";
+import { HomeHeader } from "@/components/home/HomeHeader";
+import { ProgressBar } from "@/components/home/ProgressBar";
+import { SectionHeader } from "@/components/log/SectionHeader";
+import { currentUserId } from "@/lib/auth";
+import { colors, fonts } from "@/constants/theme";
+import { usePets } from "@/hooks/usePets";
 import {
   cancelChallenge,
   challengeKind,
   fetchChallengeDetail,
   type ChallengeDetail,
   type ContributionRow,
-} from '@/lib/challengesData';
-import { activityLabel, daysLeft, initial, isSameDay } from '@/lib/format';
-import { toDate } from '@/lib/homeData';
-import { dataVersionStore, selectedPetStore } from '@/lib/store';
+} from "@/lib/challengesData";
+import { activityLabel, daysLeft, initial, isSameDay } from "@/lib/format";
+import { toDate } from "@/lib/homeData";
+import { dataVersionStore, selectedPetStore } from "@/lib/store";
 
 const MEMBER_COLORS = [
   { bg: colors.primarySoft, fg: colors.primary },
-  { bg: colors.peach, fg: '#C06A1F' },
-  { bg: colors.mint, fg: '#3F8A57' },
-  { bg: colors.butter, fg: '#B07A00' },
+  { bg: colors.peach, fg: "#C06A1F" },
+  { bg: colors.mint, fg: "#3F8A57" },
+  { bg: colors.butter, fg: "#B07A00" },
 ];
 
 export default function ChallengeProgressScreen() {
@@ -60,10 +60,10 @@ export default function ChallengeProgressScreen() {
   const c = detail?.challenge;
   const kind = c ? challengeKind(c) : null;
   const left = c ? daysLeft(toDate(c.endDate)) : 0;
-  const active = c?.completionStatus === 'in_progress';
+  const active = c?.completionStatus === "in_progress";
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <HomeHeader
         pet={pet}
         pets={pets}
@@ -77,11 +77,15 @@ export default function ChallengeProgressScreen() {
             <View style={styles.summaryTop}>
               <ChallengeIcon challenge={c} />
               <View style={styles.flex}>
-                <Text style={styles.kind}>{kind.label.toUpperCase()} CHALLENGE</Text>
+                <Text style={styles.kind}>
+                  {kind.label.toUpperCase()} CHALLENGE
+                </Text>
                 <Text style={styles.title}>{c.title}</Text>
               </View>
             </View>
-            {!!c.description && <Text style={styles.description}>{c.description}</Text>}
+            {!!c.description && (
+              <Text style={styles.description}>{c.description}</Text>
+            )}
             <Text style={styles.muted}>
               {c.progress} of {c.goal} {kind.unit} complete
             </Text>
@@ -89,10 +93,10 @@ export default function ChallengeProgressScreen() {
             <View style={styles.summaryBottom}>
               <Text style={styles.muted}>
                 {active
-                  ? `${left} ${left === 1 ? 'day' : 'days'} remaining`
-                  : c.completionStatus === 'completed'
-                    ? 'Completed'
-                    : 'Cancelled'}
+                  ? `${left} ${left === 1 ? "day" : "days"} remaining`
+                  : c.completionStatus === "completed"
+                    ? "Completed"
+                    : "Cancelled"}
               </Text>
               <Text style={styles.reward}>Reward: +{c.pointReward} Points</Text>
             </View>
@@ -114,9 +118,15 @@ export default function ChallengeProgressScreen() {
           </View>
 
           {active && (
-            <Pressable style={styles.cancel} onPress={cancel} accessibilityRole="button">
+            <Pressable
+              style={styles.cancel}
+              onPress={cancel}
+              accessibilityRole="button"
+            >
               <Text style={styles.cancelText}>
-                {confirming ? 'Tap again to cancel this challenge' : 'Cancel challenge'}
+                {confirming
+                  ? "Tap again to cancel this challenge"
+                  : "Cancel challenge"}
               </Text>
             </Pressable>
           )}
@@ -141,29 +151,33 @@ function MemberRow({
   if (row.latest) {
     const d = toDate(row.latest.occurredAt);
     const day = isSameDay(d, new Date())
-      ? 'today'
-      : d.toLocaleDateString('en-US', { weekday: 'long' });
-    const minutes = row.latest.durationMinutes ? ` · ${row.latest.durationMinutes} min` : '';
+      ? "today"
+      : d.toLocaleDateString("en-US", { weekday: "long" });
+    const minutes = row.latest.durationMinutes
+      ? ` · ${row.latest.durationMinutes} min`
+      : "";
     line = `${activityLabel(row.latest.activityType)} ${day}${minutes}`;
   } else if (row.done) {
-    line = 'Done this week';
+    line = "Done this week";
   } else {
-    line = stillTime ? 'Still has time this week' : "Didn't make it this time";
+    line = stillTime ? "Still has time this week" : "Didn't make it this time";
   }
 
   return (
     <View style={[styles.row, !last && styles.divider]}>
       <View style={[styles.avatar, { backgroundColor: color.bg }]}>
-        <Text style={[styles.avatarText, { color: color.fg }]}>{initial(row.user.name)}</Text>
+        <Text style={[styles.avatarText, { color: color.fg }]}>
+          {initial(row.user.name)}
+        </Text>
       </View>
       <View style={styles.flex}>
         <Text style={styles.name}>
-          {row.user.userId === currentUserId() ? 'You' : row.user.name}
+          {row.user.userId === currentUserId() ? "You" : row.user.name}
         </Text>
         <Text style={styles.muted}>{line}</Text>
       </View>
       <Ionicons
-        name={row.done ? 'checkmark' : 'close'}
+        name={row.done ? "checkmark" : "close"}
         size={22}
         color={row.done ? colors.doneText : colors.openText}
       />
@@ -184,20 +198,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   summary: { paddingVertical: 16, gap: 10 },
-  summaryTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  kind: { fontSize: 11, fontFamily: fonts.heading, color: colors.textMuted, letterSpacing: 0.5 },
+  summaryTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  kind: {
+    fontSize: 11,
+    fontFamily: fonts.heading,
+    color: colors.textMuted,
+    letterSpacing: 0.5,
+  },
   title: { fontSize: 22, fontFamily: fonts.heading, color: colors.text },
   description: { fontSize: 15, lineHeight: 21, color: colors.text },
-  summaryBottom: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
+  summaryBottom: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 2,
+  },
   reward: { fontSize: 14, fontFamily: fonts.heading, color: colors.primary },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
-  divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 14,
+  },
+  divider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
   avatar: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarText: { fontSize: 17, fontFamily: fonts.heading },
   name: { fontSize: 16, fontFamily: fonts.heading, color: colors.text },
@@ -205,10 +236,10 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#F2B8A8',
-    backgroundColor: '#FCE4DC',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: "#F2B8A8",
+    backgroundColor: "#FCE4DC",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  cancelText: { fontSize: 16, fontFamily: fonts.heading, color: '#B5442A' },
+  cancelText: { fontSize: 16, fontFamily: fonts.heading, color: "#B5442A" },
 });

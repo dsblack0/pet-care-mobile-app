@@ -6,8 +6,8 @@ import {
   getUserPetsForPet,
   getUserPetsForUser,
   getUsersById,
-} from '@/lib/db';
-import type { Level, Pet, User } from '@/types/firestore';
+} from "@/lib/db";
+import type { Level, Pet, User } from "@/types/firestore";
 
 export type ProfilePet = {
   pet: Pet;
@@ -23,11 +23,16 @@ export type ProfileData = {
   pets: ProfilePet[];
 };
 
-export async function fetchProfile(userId: string): Promise<ProfileData | null> {
+export async function fetchProfile(
+  userId: string,
+): Promise<ProfileData | null> {
   const user = await getUser(userId);
   if (!user) return null;
 
-  const [links, levels] = await Promise.all([getUserPetsForUser(userId), getLevels()]);
+  const [links, levels] = await Promise.all([
+    getUserPetsForUser(userId),
+    getLevels(),
+  ]);
   const pets = await Promise.all(
     links.map(async (link): Promise<ProfilePet | null> => {
       const pet = await getPet(link.petId.id);
@@ -39,14 +44,16 @@ export async function fetchProfile(userId: string): Promise<ProfileData | null> 
       return {
         pet,
         level: levels.find((l) => l.levelNum === pet.level) ?? null,
-        sharedWith: others.map((id) => usersById[id]?.name).filter((n): n is string => !!n),
+        sharedWith: others
+          .map((id) => usersById[id]?.name)
+          .filter((n): n is string => !!n),
       };
     }),
   );
 
   return {
     user,
-    isOrganizer: links.some((up) => up.role === 'owner'),
+    isOrganizer: links.some((up) => up.role === "owner"),
     pets: pets.filter((p): p is ProfilePet => !!p),
   };
 }

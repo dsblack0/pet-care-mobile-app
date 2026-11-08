@@ -1,32 +1,20 @@
-import {
-  addDoc,
-  collection,
-  doc,
-  DocumentReference
-} from "firebase/firestore";
+import { addDoc, collection, doc, DocumentReference } from "firebase/firestore";
 
 import { db } from "../firebaseConfig";
 import { NewInvitation } from "../models/invitations";
 
 export async function saveInvitation(
-  invitation: NewInvitation
+  invitation: NewInvitation,
 ): Promise<string> {
-  const docRef = await addDoc(
-    collection(db, "invitations"),
-    invitation
-  );
+  const docRef = await addDoc(collection(db, "invitations"), invitation);
 
   return docRef.id;
 }
 
-export function getPetReference(
-  petId: string
-): DocumentReference {
+export function getPetReference(petId: string): DocumentReference {
   return doc(db, "pets", petId);
 }
 
-export function getUserReference(
-  userId: string
-): DocumentReference {
+export function getUserReference(userId: string): DocumentReference {
   return doc(db, "users", userId);
 }

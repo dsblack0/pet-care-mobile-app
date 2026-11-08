@@ -1,8 +1,8 @@
-import { router } from 'expo-router';
+import { router } from "expo-router";
 
-import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
-import { PetForm } from '@/components/pet/PetForm';
-import { createOnboardingPet } from '@/lib/onboardingData';
+import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
+import { PetForm } from "@/components/pet/PetForm";
+import { createOnboardingPet } from "@/lib/onboardingData";
 
 export default function OnboardingPetScreen() {
   return (
@@ -17,7 +17,7 @@ export default function OnboardingPetScreen() {
         footerHint="You can add more pets later from your profile."
         onSubmit={async (input) => {
           await createOnboardingPet(input);
-          router.replace('/invite-family');
+          router.replace("/invite-family");
         }}
       />
     </OnboardingShell>

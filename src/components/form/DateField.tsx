@@ -1,10 +1,17 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { useState } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { useState } from "react";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import { fieldStyles } from '@/components/form/fieldStyles';
-import { colors, fonts } from '@/constants/theme';
+import { fieldStyles } from "@/components/form/fieldStyles";
+import { colors, fonts } from "@/constants/theme";
 
 type Props = {
   label: string;
@@ -33,13 +40,17 @@ export function DateField({ label, value, onChange, maximumDate }: Props) {
       >
         <Text style={value ? fieldStyles.text : fieldStyles.placeholder}>
           {value
-            ? value.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-            : 'Select date'}
+            ? value.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
+            : "Select date"}
         </Text>
         <Ionicons name="calendar-outline" size={18} color={colors.textMuted} />
       </Pressable>
 
-      {open && Platform.OS === 'android' && (
+      {open && Platform.OS === "android" && (
         <DateTimePicker
           value={draft}
           mode="date"
@@ -52,7 +63,7 @@ export function DateField({ label, value, onChange, maximumDate }: Props) {
         />
       )}
 
-      {Platform.OS === 'ios' && (
+      {Platform.OS === "ios" && (
         <Modal
           visible={open}
           transparent
@@ -60,7 +71,10 @@ export function DateField({ label, value, onChange, maximumDate }: Props) {
           onRequestClose={() => setOpen(false)}
         >
           <View style={styles.backdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpen(false)} />
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={() => setOpen(false)}
+            />
             <View style={styles.sheet}>
               <View style={styles.toolbar}>
                 <Pressable onPress={() => setOpen(false)}>
@@ -91,7 +105,11 @@ export function DateField({ label, value, onChange, maximumDate }: Props) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(42,33,28,0.35)' },
+  backdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(42,33,28,0.35)",
+  },
   sheet: {
     backgroundColor: colors.surface,
     borderTopLeftRadius: 24,
@@ -99,8 +117,8 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   toolbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 14,
   },

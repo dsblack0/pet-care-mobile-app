@@ -1,7 +1,4 @@
-import {
-  DocumentReference,
-  Timestamp
-} from "firebase/firestore";
+import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export interface UserPet {
   userPetId: string;
@@ -16,7 +13,7 @@ export type NewUserPet = Omit<UserPet, "userPetId">;
 export const createUserPet = (
   userId: DocumentReference,
   petId: DocumentReference,
-  role: "owner" | "member" = "member"
+  role: "owner" | "member" = "member",
 ): NewUserPet => {
   return {
     userId,

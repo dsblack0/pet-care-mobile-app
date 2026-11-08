@@ -1,10 +1,16 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from "react-native";
 
-import { colors, fonts } from '@/constants/theme';
-import { initial } from '@/lib/format';
+import { colors, fonts } from "@/constants/theme";
+import { initial } from "@/lib/format";
 
 /** Overlapping initials, e.g. for who has contributed to a challenge. */
-export function AvatarStack({ names, size = 28 }: { names: string[]; size?: number }) {
+export function AvatarStack({
+  names,
+  size = 28,
+}: {
+  names: string[];
+  size?: number;
+}) {
   return (
     <View style={styles.row}>
       {names.map((name, i) => (
@@ -16,7 +22,9 @@ export function AvatarStack({ names, size = 28 }: { names: string[]; size?: numb
             i > 0 && { marginLeft: -size / 4 },
           ]}
         >
-          <Text style={[styles.text, { fontSize: size * 0.42 }]}>{initial(name)}</Text>
+          <Text style={[styles.text, { fontSize: size * 0.42 }]}>
+            {initial(name)}
+          </Text>
         </View>
       ))}
     </View>
@@ -24,13 +32,13 @@ export function AvatarStack({ names, size = 28 }: { names: string[]; size?: numb
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row' },
+  row: { flexDirection: "row" },
   avatar: {
     backgroundColor: colors.peach,
     borderWidth: 2,
     borderColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   text: { fontFamily: fonts.heading, color: colors.text },
 });

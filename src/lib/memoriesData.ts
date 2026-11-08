@@ -1,19 +1,19 @@
 // Data for the Memories tab and the monthly recap, backed by Firestore. Recaps are built with
 // the team's models/recaps and only saved when the user taps Save.
-import { collection, doc, setDoc, Timestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, Timestamp } from "firebase/firestore";
 
-import { getMemoriesForPet, getUsersById } from '@/lib/db';
-import { toDate } from '@/lib/homeData';
-import { uploadImage } from '@/lib/storage';
-import { dataVersionStore } from '@/lib/store';
-import type { Memory, User } from '@/types/firestore';
-import { db } from '../../firebaseConfig';
+import { getMemoriesForPet, getUsersById } from "@/lib/db";
+import { toDate } from "@/lib/homeData";
+import { uploadImage } from "@/lib/storage";
+import { dataVersionStore } from "@/lib/store";
+import type { Memory, User } from "@/types/firestore";
+import { db } from "../../firebaseConfig";
 import {
   getMemoryReference,
   getPetReference,
   getUserReference,
-} from '../../firebaseServices/recapsService';
-import { createRecap } from '../../models/recaps';
+} from "../../firebaseServices/recapsService";
+import { createRecap } from "../../models/recaps";
 
 export type MemoriesPage = {
   /** Newest first. */
@@ -27,7 +27,15 @@ export type MemoriesPage = {
 
 function monthRange(now = new Date()) {
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const end = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    0,
+    23,
+    59,
+    59,
+    999,
+  );
   return { start, end };
 }
 
@@ -52,7 +60,10 @@ export async function fetchMemoriesPage(petId: string): Promise<MemoriesPage> {
   });
 
   const usersById = await getUsersById(
-    memories.flatMap((m) => [m.createdBy.id, ...m.participants.map((p) => p.id)]),
+    memories.flatMap((m) => [
+      m.createdBy.id,
+      ...m.participants.map((p) => p.id),
+    ]),
   );
   return { memories, usersById, yearAgo, thisMonth };
 }
@@ -73,7 +84,9 @@ export async function buildRecapDraft(petId: string): Promise<RecapDraft> {
     return d >= start && d <= end;
   });
 
-  const ids = [...new Set(memories.flatMap((m) => m.participants.map((p) => p.id)))];
+  const ids = [
+    ...new Set(memories.flatMap((m) => m.participants.map((p) => p.id))),
+  ];
   const usersById = await getUsersById(ids);
   const people = ids.map((id) => usersById[id]).filter((u): u is User => !!u);
 
@@ -92,7 +105,7 @@ export async function saveRecap(input: {
   draft: RecapDraft;
   localImageUri: string | null;
 }): Promise<string> {
-  const recapId = doc(collection(db, 'recaps')).id;
+  const recapId = doc(collection(db, "recaps")).id;
   const exportPath = input.localImageUri
     ? await uploadImage(input.localImageUri, `recaps/${recapId}.png`)
     : null;
@@ -108,7 +121,7 @@ export async function saveRecap(input: {
     exportPath,
   );
   // setDoc (not saveRecap's addDoc) so the document uses the id the image is named after.
-  await setDoc(doc(db, 'recaps', recapId), recap);
+  await setDoc(doc(db, "recaps", recapId), recap);
   dataVersionStore.set(dataVersionStore.get() + 1);
   return recapId;
 }

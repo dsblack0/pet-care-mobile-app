@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-import { currentUserId } from '@/lib/auth';
-import { fetchPetsForUser } from '@/lib/homeData';
-import { dataVersionStore, selectedPetStore } from '@/lib/store';
-import type { Pet } from '@/types/firestore';
+import { currentUserId } from "@/lib/auth";
+import { fetchPetsForUser } from "@/lib/homeData";
+import { dataVersionStore, selectedPetStore } from "@/lib/store";
+import type { Pet } from "@/types/firestore";
 
 /** The signed-in user's pets and the selected one. Reloads after writes (e.g. a new pet). */
 export function usePets() {

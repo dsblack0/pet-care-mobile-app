@@ -10,7 +10,7 @@ import {
   where,
   type DocumentData,
   type QueryDocumentSnapshot,
-} from 'firebase/firestore';
+} from "firebase/firestore";
 
 import type {
   CareSchedule,
@@ -23,36 +23,41 @@ import type {
   Reward,
   User,
   UserPet,
-} from '@/types/firestore';
-import { db } from '../../firebaseConfig';
+} from "@/types/firestore";
+import { db } from "../../firebaseConfig";
 
-export const petRef = (id: string) => doc(db, 'pets', id);
-export const userRef = (id: string) => doc(db, 'users', id);
+export const petRef = (id: string) => doc(db, "pets", id);
+export const userRef = (id: string) => doc(db, "users", id);
 
 /** Placeholder text like "{file_path_from_firebase_storage}" is not a real Storage path. */
 function storagePath(value: unknown): string | null {
-  return typeof value === 'string' && value && !value.startsWith('{') ? value : null;
+  return typeof value === "string" && value && !value.startsWith("{")
+    ? value
+    : null;
 }
 
 /** YYYY-MM-DD from a string or Timestamp. */
 function dateString(value: unknown): string | null {
   if (value instanceof Timestamp) {
     const d = value.toDate();
-    const pad = (n: number) => String(n).padStart(2, '0');
+    const pad = (n: number) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
-  return typeof value === 'string' ? value : null;
+  return typeof value === "string" ? value : null;
 }
 
-const num = (v: unknown, fallback = 0) => (v === null || v === undefined ? fallback : Number(v));
+const num = (v: unknown, fallback = 0) =>
+  v === null || v === undefined ? fallback : Number(v);
 
 function toUser(id: string, d: DocumentData): User {
   // Some dummy users store notifications as a one-item list.
-  const n = Array.isArray(d.notifications) ? d.notifications[0] : d.notifications;
+  const n = Array.isArray(d.notifications)
+    ? d.notifications[0]
+    : d.notifications;
   return {
     userId: id,
-    name: d.name ?? '',
-    email: d.email ?? '',
+    name: d.name ?? "",
+    email: d.email ?? "",
     joinedAt: d.joinedAt ?? Timestamp.now(),
     profilePhotoPath: storagePath(d.profilePhotoPath),
     numberOfPets: num(d.numberOfPets),
@@ -63,14 +68,15 @@ function toUser(id: string, d: DocumentData): User {
 function toPet(id: string, d: DocumentData): Pet {
   return {
     petId: id,
-    name: d.name ?? '',
-    species: d.species ?? '',
+    name: d.name ?? "",
+    species: d.species ?? "",
     breed: d.breed ?? null,
-    gender: d.gender ?? 'Male',
+    gender: d.gender ?? "Male",
     age: num(d.age),
     birthday: dateString(d.birthday),
     petPhotoPath: storagePath(d.petPhotoPath),
-    weight: d.weight === null || d.weight === undefined ? null : Number(d.weight),
+    weight:
+      d.weight === null || d.weight === undefined ? null : Number(d.weight),
     numberOfMembers: num(d.numberOfMembers, 1),
     totalPoints: num(d.totalPoints),
     level: num(d.level, 1),
@@ -86,9 +92,9 @@ function toMemory(s: QueryDocumentSnapshot): Memory {
     createdAt: d.createdAt ?? d.occurredAt,
     occurredAt: d.occurredAt,
     photoPath: storagePath(d.photoPath),
-    description: d.description ?? '',
+    description: d.description ?? "",
     location: d.location ?? null,
-    activityType: d.activityType ?? 'Other',
+    activityType: d.activityType ?? "Other",
     participants: d.participants ?? [],
     careScheduleId: d.careScheduleId ?? null,
     durationMinutes:
@@ -108,21 +114,25 @@ function toChallenge(id: string, d: DocumentData): Challenge {
     jointActivity: !!d.jointActivity,
     completedBy: d.completedBy ?? [],
     completedAt: d.completedAt ?? null,
-    title: d.title ?? '',
+    title: d.title ?? "",
     description: d.description,
-    completionStatus: d.completionStatus ?? 'in_progress',
+    completionStatus: d.completionStatus ?? "in_progress",
     startDate: d.startDate,
     endDate: d.endDate,
     progress: num(d.progress),
     goal: num(d.goal),
-    goalType: d.goalType ?? '',
+    goalType: d.goalType ?? "",
     activityTypes: d.activityTypes ?? [],
     pointReward: num(d.pointReward),
   };
 }
 
 async function byPet(name: string, petId: string) {
-  return (await getDocs(query(collection(db, name), where('petId', '==', petRef(petId))))).docs;
+  return (
+    await getDocs(
+      query(collection(db, name), where("petId", "==", petRef(petId))),
+    )
+  ).docs;
 }
 
 export async function getUser(id: string): Promise<User | null> {
@@ -130,10 +140,14 @@ export async function getUser(id: string): Promise<User | null> {
   return s.exists() ? toUser(s.id, s.data()) : null;
 }
 
-export async function getUsersById(ids: string[]): Promise<Record<string, User>> {
+export async function getUsersById(
+  ids: string[],
+): Promise<Record<string, User>> {
   const unique = [...new Set(ids)];
   const users = await Promise.all(unique.map(getUser));
-  return Object.fromEntries(users.filter((u): u is User => !!u).map((u) => [u.userId, u]));
+  return Object.fromEntries(
+    users.filter((u): u is User => !!u).map((u) => [u.userId, u]),
+  );
 }
 
 export async function getPet(id: string): Promise<Pet | null> {
@@ -142,16 +156,19 @@ export async function getPet(id: string): Promise<Pet | null> {
 }
 
 export async function getUserPetsForUser(userId: string): Promise<UserPet[]> {
-  const q = query(collection(db, 'userPets'), where('userId', '==', userRef(userId)));
+  const q = query(
+    collection(db, "userPets"),
+    where("userId", "==", userRef(userId)),
+  );
   return (await getDocs(q)).docs.map((s) => ({
-    ...(s.data() as Omit<UserPet, 'userPetId'>),
+    ...(s.data() as Omit<UserPet, "userPetId">),
     userPetId: s.id,
   }));
 }
 
 export async function getUserPetsForPet(petId: string): Promise<UserPet[]> {
-  return (await byPet('userPets', petId)).map((s) => ({
-    ...(s.data() as Omit<UserPet, 'userPetId'>),
+  return (await byPet("userPets", petId)).map((s) => ({
+    ...(s.data() as Omit<UserPet, "userPetId">),
     userPetId: s.id,
   }));
 }
@@ -165,43 +182,54 @@ export async function getFamily(petId: string): Promise<User[]> {
 
 /** Newest first. */
 export async function getMemoriesForPet(petId: string): Promise<Memory[]> {
-  return (await byPet('memories', petId))
+  return (await byPet("memories", petId))
     .map(toMemory)
     .filter((m) => m.occurredAt)
     .sort((a, b) => b.occurredAt.toMillis() - a.occurredAt.toMillis());
 }
 
 /** By time of day; schedules without a time go last. */
-export async function getSchedulesForPet(petId: string): Promise<CareSchedule[]> {
-  return (await byPet('careSchedules', petId))
-    .map((s) => ({ ...(s.data() as Omit<CareSchedule, 'careScheduleId'>), careScheduleId: s.id }))
-    .sort((a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99'));
+export async function getSchedulesForPet(
+  petId: string,
+): Promise<CareSchedule[]> {
+  return (await byPet("careSchedules", petId))
+    .map((s) => ({
+      ...(s.data() as Omit<CareSchedule, "careScheduleId">),
+      careScheduleId: s.id,
+    }))
+    .sort((a, b) =>
+      (a.scheduledTime ?? "99:99").localeCompare(b.scheduledTime ?? "99:99"),
+    );
 }
 
 export async function getChallengesForPet(petId: string): Promise<Challenge[]> {
-  return (await byPet('challenges', petId)).map((s) => toChallenge(s.id, s.data()));
+  return (await byPet("challenges", petId)).map((s) =>
+    toChallenge(s.id, s.data()),
+  );
 }
 
 export async function getChallenge(id: string): Promise<Challenge | null> {
-  const s = await getDoc(doc(db, 'challenges', id));
+  const s = await getDoc(doc(db, "challenges", id));
   return s.exists() ? toChallenge(s.id, s.data()) : null;
 }
 
-export async function getInvitationsForPet(petId: string): Promise<Invitation[]> {
-  return (await byPet('invitations', petId)).map((s) => ({
-    ...(s.data() as Omit<Invitation, 'invitationId'>),
+export async function getInvitationsForPet(
+  petId: string,
+): Promise<Invitation[]> {
+  return (await byPet("invitations", petId)).map((s) => ({
+    ...(s.data() as Omit<Invitation, "invitationId">),
     invitationId: s.id,
   }));
 }
 
 /** Some dummy levels use `name` instead of `title`. */
 export async function getLevels(): Promise<Level[]> {
-  return (await getDocs(collection(db, 'levels'))).docs
+  return (await getDocs(collection(db, "levels"))).docs
     .map((s) => {
       const d = s.data();
       return {
         levelNum: num(d.levelNum),
-        title: d.title ?? d.name ?? '',
+        title: d.title ?? d.name ?? "",
         nextLevelPoints: num(d.nextLevelPoints),
       };
     })
@@ -209,17 +237,17 @@ export async function getLevels(): Promise<Level[]> {
 }
 
 export async function getPoints(): Promise<Points[]> {
-  return (await getDocs(collection(db, 'points'))).docs.map((s) => ({
+  return (await getDocs(collection(db, "points"))).docs.map((s) => ({
     action: s.data().action,
     pointsGained: num(s.data().pointsGained),
   }));
 }
 
 export async function getRewards(): Promise<Reward[]> {
-  return (await getDocs(collection(db, 'rewards'))).docs.map((s) => ({
+  return (await getDocs(collection(db, "rewards"))).docs.map((s) => ({
     rewardId: s.id,
-    name: s.data().name ?? '',
-    description: s.data().description ?? '',
+    name: s.data().name ?? "",
+    description: s.data().description ?? "",
     pointRequirement: num(s.data().pointRequirement),
   }));
 }

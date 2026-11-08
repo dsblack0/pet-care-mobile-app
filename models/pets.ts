@@ -23,7 +23,7 @@ export const createPet = (
   breed: string | null = null,
   birthday: string | null = null,
   petPhotoPath: string | null = null,
-  weight: number | null = null
+  weight: number | null = null,
 ): NewPet => {
   return {
     name,

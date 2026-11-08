@@ -1,8 +1,15 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import * as ImagePicker from 'expo-image-picker';
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import * as ImagePicker from "expo-image-picker";
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
-import { colors, fonts } from '@/constants/theme';
+import { colors, fonts } from "@/constants/theme";
 
 type Props = {
   petName: string;
@@ -12,10 +19,16 @@ type Props = {
   onCaptionChange: (text: string) => void;
 };
 
-export function MemoryCard({ petName, photoUri, caption, onPhotoChange, onCaptionChange }: Props) {
+export function MemoryCard({
+  petName,
+  photoUri,
+  caption,
+  onPhotoChange,
+  onCaptionChange,
+}: Props) {
   const pickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
@@ -38,7 +51,11 @@ export function MemoryCard({ petName, photoUri, caption, onPhotoChange, onCaptio
           </Pressable>
         </View>
       ) : (
-        <Pressable style={styles.addPhoto} onPress={pickPhoto} accessibilityRole="button">
+        <Pressable
+          style={styles.addPhoto}
+          onPress={pickPhoto}
+          accessibilityRole="button"
+        >
           <Ionicons name="camera" size={22} color={colors.primary} />
           <Text style={styles.addPhotoText}>Add a photo</Text>
         </Pressable>
@@ -68,26 +85,30 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
     borderColor: colors.primary,
     backgroundColor: colors.primarySoft,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
   },
-  addPhotoText: { fontSize: 16, fontFamily: fonts.subheading, color: colors.primary },
-  photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 14 },
+  addPhotoText: {
+    fontSize: 16,
+    fontFamily: fonts.subheading,
+    color: colors.primary,
+  },
+  photo: { width: "100%", aspectRatio: 4 / 3, borderRadius: 14 },
   remove: {
-    position: 'absolute',
+    position: "absolute",
     top: 8,
     right: 8,
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   caption: {
     minHeight: 56,
@@ -97,6 +118,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     fontSize: 15,
     color: colors.text,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
 });

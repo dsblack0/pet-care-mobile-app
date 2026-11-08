@@ -1,20 +1,20 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, type Href } from 'expo-router';
-import type { ComponentProps } from 'react';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { router, type Href } from "expo-router";
+import type { ComponentProps } from "react";
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { HomeHeader } from '@/components/home/HomeHeader';
-import { ProgressBar } from '@/components/home/ProgressBar';
-import { SectionHeader } from '@/components/log/SectionHeader';
-import { colors, fonts } from '@/constants/theme';
-import { usePets } from '@/hooks/usePets';
-import { fetchRewards, type RewardsPage } from '@/lib/challengesData';
-import { dataVersionStore, selectedPetStore } from '@/lib/store';
-import type { Reward } from '@/types/firestore';
+import { HomeHeader } from "@/components/home/HomeHeader";
+import { ProgressBar } from "@/components/home/ProgressBar";
+import { SectionHeader } from "@/components/log/SectionHeader";
+import { colors, fonts } from "@/constants/theme";
+import { usePets } from "@/hooks/usePets";
+import { fetchRewards, type RewardsPage } from "@/lib/challengesData";
+import { dataVersionStore, selectedPetStore } from "@/lib/store";
+import type { Reward } from "@/types/firestore";
 
-type IconName = ComponentProps<typeof Ionicons>['name'];
+type IconName = ComponentProps<typeof Ionicons>["name"];
 
 // How each unlocked reward looks and what its button says. The rewards model has no
 // display fields, so this lives in the UI, keyed by rewardId.
@@ -22,26 +22,42 @@ const DISPLAY: Record<
   string,
   { icon: IconName; bg: string; fg: string; action: string; href?: Href }
 > = {
-  reward001: { icon: 'pricetag-outline', bg: colors.peach, fg: '#C06A1F', action: 'Redeem' },
-  reward002: {
-    icon: 'images-outline',
-    bg: colors.mint,
-    fg: '#3F8A57',
-    action: 'Create',
-    href: '/memories/recap',
+  reward001: {
+    icon: "pricetag-outline",
+    bg: colors.peach,
+    fg: "#C06A1F",
+    action: "Redeem",
   },
-  reward003: { icon: 'happy-outline', bg: colors.primarySoft, fg: colors.primary, action: 'Use' },
-  reward004: { icon: 'print-outline', bg: colors.butter, fg: '#B07A00', action: 'Order' },
+  reward002: {
+    icon: "images-outline",
+    bg: colors.mint,
+    fg: "#3F8A57",
+    action: "Create",
+    href: "/memories/recap",
+  },
+  reward003: {
+    icon: "happy-outline",
+    bg: colors.primarySoft,
+    fg: colors.primary,
+    action: "Use",
+  },
+  reward004: {
+    icon: "print-outline",
+    bg: colors.butter,
+    fg: "#B07A00",
+    action: "Order",
+  },
 };
 const DEFAULT_DISPLAY = {
-  icon: 'gift-outline' as IconName,
+  icon: "gift-outline" as IconName,
   bg: colors.primarySoft,
   fg: colors.primary,
-  action: 'View',
+  action: "View",
 };
 
 /** Reward descriptions can mention the pet as {pet}. */
-const describe = (r: Reward, petName: string) => r.description.replaceAll('{pet}', petName);
+const describe = (r: Reward, petName: string) =>
+  r.description.replaceAll("{pet}", petName);
 
 export default function RewardsScreen() {
   const { pets, pet } = usePets();
@@ -58,7 +74,7 @@ export default function RewardsScreen() {
   const toGo = Math.max(0, next - (page?.pet.totalPoints ?? 0));
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <HomeHeader
         pet={pet}
         pets={pets}
@@ -75,23 +91,30 @@ export default function RewardsScreen() {
                   {page.pet.name.toUpperCase()}&apos;S SHARED PROGRESS
                 </Text>
                 <Text style={styles.level}>Level {page.pet.level}</Text>
-                {page.level && <Text style={styles.levelTitle}>{page.level.title}</Text>}
+                {page.level && (
+                  <Text style={styles.levelTitle}>{page.level.title}</Text>
+                )}
               </View>
               <View style={styles.pointsCircle}>
-                <Text style={styles.pointsValue}>{page.pet.totalPoints.toLocaleString()}</Text>
+                <Text style={styles.pointsValue}>
+                  {page.pet.totalPoints.toLocaleString()}
+                </Text>
                 <Text style={styles.pointsLabel}>POINTS</Text>
               </View>
             </View>
             <Text style={styles.muted}>
               {page.nextLevel
                 ? `${toGo.toLocaleString()} Points to Level ${page.nextLevel.levelNum} · ${page.nextLevel.title}`
-                : 'Top level reached'}
+                : "Top level reached"}
             </Text>
             {next > 0 && <ProgressBar value={page.pet.totalPoints / next} />}
           </View>
 
           <View>
-            <SectionHeader title="Unlocked rewards" hint={`${page.unlocked.length} available`} />
+            <SectionHeader
+              title="Unlocked rewards"
+              hint={`${page.unlocked.length} available`}
+            />
             <View style={styles.card}>
               {page.unlocked.length === 0 && (
                 <Text style={[styles.muted, styles.empty]}>
@@ -103,14 +126,19 @@ export default function RewardsScreen() {
                 return (
                   <View
                     key={r.rewardId}
-                    style={[styles.row, i < page.unlocked.length - 1 && styles.divider]}
+                    style={[
+                      styles.row,
+                      i < page.unlocked.length - 1 && styles.divider,
+                    ]}
                   >
                     <View style={[styles.icon, { backgroundColor: d.bg }]}>
                       <Ionicons name={d.icon} size={22} color={d.fg} />
                     </View>
                     <View style={styles.flex}>
                       <Text style={styles.rewardName}>{r.name}</Text>
-                      <Text style={styles.muted}>{describe(r, page.pet.name)}</Text>
+                      <Text style={styles.muted}>
+                        {describe(r, page.pet.name)}
+                      </Text>
                     </View>
                     <Pressable
                       style={[styles.action, { backgroundColor: d.bg }]}
@@ -134,14 +162,25 @@ export default function RewardsScreen() {
                 {page.upcoming.map(({ reward, level }, i) => (
                   <View
                     key={reward.rewardId}
-                    style={[styles.row, i < page.upcoming.length - 1 && styles.divider]}
+                    style={[
+                      styles.row,
+                      i < page.upcoming.length - 1 && styles.divider,
+                    ]}
                   >
                     <View style={[styles.icon, styles.lockedIcon]}>
-                      <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} />
+                      <Ionicons
+                        name="lock-closed-outline"
+                        size={20}
+                        color={colors.textMuted}
+                      />
                     </View>
                     <View style={styles.flex}>
-                      <Text style={[styles.rewardName, styles.locked]}>{reward.name}</Text>
-                      <Text style={styles.lockedText}>{describe(reward, page.pet.name)}</Text>
+                      <Text style={[styles.rewardName, styles.locked]}>
+                        {reward.name}
+                      </Text>
+                      <Text style={styles.lockedText}>
+                        {describe(reward, page.pet.name)}
+                      </Text>
                     </View>
                     <View style={styles.levelBadge}>
                       <Text style={styles.levelBadgeText}>LEVEL {level}</Text>
@@ -171,8 +210,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   progress: { paddingVertical: 16, gap: 10 },
-  progressTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  kicker: { fontSize: 12, fontFamily: fonts.heading, color: colors.textMuted, letterSpacing: 0.5 },
+  progressTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  kicker: {
+    fontSize: 12,
+    fontFamily: fonts.heading,
+    color: colors.textMuted,
+    letterSpacing: 0.5,
+  },
   level: { fontSize: 30, fontFamily: fonts.heading, color: colors.text },
   levelTitle: { fontSize: 16, color: colors.text },
   pointsCircle: {
@@ -180,19 +224,35 @@ const styles = StyleSheet.create({
     height: 84,
     borderRadius: 42,
     backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  pointsValue: { fontSize: 24, fontFamily: fonts.heading, color: colors.primary },
-  pointsLabel: { fontSize: 11, fontFamily: fonts.heading, color: colors.primary },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
-  divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  pointsValue: {
+    fontSize: 24,
+    fontFamily: fonts.heading,
+    color: colors.primary,
+  },
+  pointsLabel: {
+    fontSize: 11,
+    fontFamily: fonts.heading,
+    color: colors.primary,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 14,
+  },
+  divider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
   icon: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   rewardName: { fontSize: 16, fontFamily: fonts.heading, color: colors.text },
   action: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
@@ -206,5 +266,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: colors.track,
   },
-  levelBadgeText: { fontSize: 11, fontFamily: fonts.heading, color: colors.textMuted },
+  levelBadgeText: {
+    fontSize: 11,
+    fontFamily: fonts.heading,
+    color: colors.textMuted,
+  },
 });

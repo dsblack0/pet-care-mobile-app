@@ -1,8 +1,4 @@
-import {
-  DocumentReference,
-  Timestamp,
-  GeoPoint
-} from "firebase/firestore";
+import { DocumentReference, Timestamp, GeoPoint } from "firebase/firestore";
 
 export interface Memory {
   memoryId: string;
@@ -35,7 +31,7 @@ export const createMemory = (
   careScheduleId: DocumentReference | null = null,
   durationMinutes: number | null = null,
   basePoints: number = 0,
-  bonusPoints: number = 0
+  bonusPoints: number = 0,
 ): NewMemory => {
   return {
     petId,

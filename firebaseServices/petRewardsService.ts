@@ -7,42 +7,29 @@ import {
   where,
   updateDoc,
   runTransaction,
-  Timestamp
+  Timestamp,
 } from "firebase/firestore";
 
 import { db } from "../firebaseConfig";
-import {
-  NewPetReward,
-  PetReward
-} from "../models/petRewards";
+import { NewPetReward, PetReward } from "../models/petRewards";
 
-export function getPetReference(
-  petId: string
-): DocumentReference {
+export function getPetReference(petId: string): DocumentReference {
   return doc(db, "pets", petId);
 }
 
-export function getRewardReference(
-  rewardId: string
-): DocumentReference {
+export function getRewardReference(rewardId: string): DocumentReference {
   return doc(db, "rewards", rewardId);
 }
 
 // Unlock a reward for a pet
-export async function savePetReward(
-  petReward: NewPetReward
-): Promise<string> {
+export async function savePetReward(petReward: NewPetReward): Promise<string> {
   // Use one deterministic ID per pet/reward pair
   // to prevent duplicate unlock records.
   const petId = petReward.petId.id;
   const rewardId = petReward.rewardId.id;
   const petRewardId = `${petId}_${rewardId}`;
 
-  const petRewardRef = doc(
-    db,
-    "petRewards",
-    petRewardId
-  );
+  const petRewardRef = doc(db, "petRewards", petRewardId);
 
   await runTransaction(db, async (transaction) => {
     const existing = await transaction.get(petRewardRef);
@@ -74,7 +61,7 @@ export async function savePetReward(
 
     transaction.set(petRewardRef, {
       ...petReward,
-      unlockedAt: Timestamp.now()
+      unlockedAt: Timestamp.now(),
     });
   });
 
@@ -82,34 +69,28 @@ export async function savePetReward(
 }
 
 // Get all unlocked rewards for a pet
-export async function getPetRewards(
-  petId: string
-): Promise<PetReward[]> {
+export async function getPetRewards(petId: string): Promise<PetReward[]> {
   const petReference = getPetReference(petId);
 
   const q = query(
     collection(db, "petRewards"),
-    where("petId", "==", petReference)
+    where("petId", "==", petReference),
   );
 
   const snapshot = await getDocs(q);
 
   return snapshot.docs.map((document) => ({
     petRewardId: document.id,
-    ...document.data()
+    ...document.data(),
   })) as PetReward[];
 }
 
 // Check if a specific reward is unlocked
 export async function isRewardUnlocked(
   petId: string,
-  rewardId: string
+  rewardId: string,
 ): Promise<boolean> {
-  const petRewardRef = doc(
-    db,
-    "petRewards",
-    `${petId}_${rewardId}`
-  );
+  const petRewardRef = doc(db, "petRewards", `${petId}_${rewardId}`);
 
   const { getDoc } = await import("firebase/firestore");
   const snapshot = await getDoc(petRewardRef);
@@ -120,15 +101,11 @@ export async function isRewardUnlocked(
 // Update the exported image path
 export async function updateRewardExportPath(
   petRewardId: string,
-  rewardExportPath: string
+  rewardExportPath: string,
 ): Promise<void> {
-  const petRewardRef = doc(
-    db,
-    "petRewards",
-    petRewardId
-  );
+  const petRewardRef = doc(db, "petRewards", petRewardId);
 
   await updateDoc(petRewardRef, {
-    rewardExportPath
+    rewardExportPath,
   });
 }

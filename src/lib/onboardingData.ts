@@ -1,20 +1,29 @@
 // Answers collected during onboarding. They feed the challenge generator (the LLM for Plus,
 // the default set for free). Only activityTypes has a Firestore home today
 // (challengePreferences); the rest are held here until the models get fields for them.
-import { addPet, type NewPetInput } from '@/lib/petData';
-import { currentUserId, sessionStore } from '@/lib/auth';
-import { createStore, dataVersionStore } from '@/lib/store';
+import { addPet, type NewPetInput } from "@/lib/petData";
+import { setChallengeSettings } from "@/lib/challengePlans";
+import { createFreePresetChallenges } from "@/lib/weeklyChallenges";
+import { currentUserId, sessionStore } from "@/lib/auth";
+import { createStore, dataVersionStore } from "@/lib/store";
 import {
   getPetReference,
   getUserReference,
   saveChallengePreference,
-} from '../../firebaseServices/challengePreferencesService';
-import { createChallengePreference } from '../../models/challengePreferences';
+} from "../../firebaseServices/challengePreferencesService";
+import { createChallengePreference } from "../../models/challengePreferences";
 
 /** Care categories the challenge generator supports, as the app's activity types. */
-export const CHALLENGE_ACTIVITIES = ['Feed', 'Walk', 'Train', 'Play', 'Groom', 'Medication'] as const;
+export const CHALLENGE_ACTIVITIES = [
+  "Feed",
+  "Walk",
+  "Train",
+  "Play",
+  "Groom",
+  "Medication",
+] as const;
 
-export type ChallengePlan = 'plus' | 'free';
+export type ChallengePlan = "plus" | "free";
 
 export type OnboardingAnswers = {
   petId: string | null;
@@ -30,8 +39,8 @@ export type OnboardingAnswers = {
 
 const EMPTY: OnboardingAnswers = {
   petId: null,
-  petName: '',
-  species: '',
+  petName: "",
+  species: "",
   activityTypes: [],
   weeklyCount: 3,
   restrictions: [],
@@ -62,10 +71,15 @@ export async function finishOnboarding(plan: ChallengePlan) {
       ),
     );
   }
-  // TODO: store `plan`, weeklyCount and restrictions once the models have fields for them,
-  // then generate the first week of challenges (LLM for 'plus', defaults for 'free').
-  void plan;
+  if (answers.petId) {
+    await setChallengeSettings(answers.petId, {
+      plan,
+      weeklyCount: answers.weeklyCount,
+      restrictions: answers.restrictions,
+    });
+    if (plan === "free") await createFreePresetChallenges(answers.petId);
+  }
   onboardingStore.set(EMPTY);
   dataVersionStore.set(dataVersionStore.get() + 1);
-  sessionStore.set('ready');
+  sessionStore.set("ready");
 }

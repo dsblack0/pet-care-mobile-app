@@ -1,6 +1,11 @@
-import { Stack } from 'expo-router';
+import { Stack } from "expo-router";
 
 // Challenge progress and Rewards live under the Challenges tab so the tab bar stays visible.
 export default function ChallengesLayout() {
-  return <Stack screenOptions={{ headerShown: false }}><Stack.Screen name="index" /><Stack.Screen name="rewards" /></Stack>;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="rewards" />
+    </Stack>
+  );
 }

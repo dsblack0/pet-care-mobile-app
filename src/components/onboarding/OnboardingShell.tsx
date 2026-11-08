@@ -1,8 +1,8 @@
 // Frame for every onboarding step: back button and progress on top, a title, scrolling content,
 // and the main button pinned to the bottom.
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
-import type { ReactNode } from 'react';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { router } from "expo-router";
+import type { ReactNode } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,11 +11,11 @@ import {
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ProgressBar } from '@/components/home/ProgressBar';
-import { colors, fonts } from '@/constants/theme';
+import { ProgressBar } from "@/components/home/ProgressBar";
+import { colors, fonts } from "@/constants/theme";
 
 export const ONBOARDING_STEPS = 6;
 
@@ -55,7 +55,7 @@ export function OnboardingShell({
 }: Props) {
   const inactive = busy || disabled;
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.topBar}>
         {canGoBack && router.canGoBack() ? (
           <Pressable
@@ -82,9 +82,12 @@ export function OnboardingShell({
 
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
           {hero}
           <View style={styles.heading}>
             <Text style={styles.title}>{title}</Text>
@@ -103,7 +106,9 @@ export function OnboardingShell({
                 disabled={inactive}
                 accessibilityRole="button"
               >
-                <Text style={styles.buttonText}>{busy ? 'One moment…' : buttonLabel}</Text>
+                <Text style={styles.buttonText}>
+                  {busy ? "One moment…" : buttonLabel}
+                </Text>
               </Pressable>
             )}
             {footer}
@@ -115,7 +120,13 @@ export function OnboardingShell({
 }
 
 /** A tappable text line for under the button. */
-export function FooterLink({ label, onPress }: { label: string; onPress: () => void }) {
+export function FooterLink({
+  label,
+  onPress,
+}: {
+  label: string;
+  onPress: () => void;
+}) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" hitSlop={8}>
       <Text style={styles.link}>{label}</Text>
@@ -138,8 +149,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     paddingHorizontal: 16,
     paddingTop: 8,
@@ -149,30 +160,39 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   progress: { flex: 1, gap: 6, paddingRight: 52 },
-  stepText: { fontSize: 12, fontFamily: fonts.subheading, color: colors.textMuted },
+  stepText: {
+    fontSize: 12,
+    fontFamily: fonts.subheading,
+    color: colors.textMuted,
+  },
   content: { padding: 20, paddingTop: 12, gap: 20, paddingBottom: 32 },
   heading: { gap: 8 },
-  title: { fontSize: 28, lineHeight: 34, fontFamily: fonts.heading, color: colors.text },
+  title: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontFamily: fonts.heading,
+    color: colors.text,
+  },
   subtitle: { fontSize: 16, lineHeight: 22, color: colors.textMuted },
   footer: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, gap: 12 },
-  error: { fontSize: 14, color: colors.openText, textAlign: 'center' },
+  error: { fontSize: 14, color: colors.openText, textAlign: "center" },
   button: {
     height: 56,
     borderRadius: 18,
     backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonDisabled: { opacity: 0.45 },
-  buttonText: { fontSize: 17, fontFamily: fonts.heading, color: '#FFFFFF' },
+  buttonText: { fontSize: 17, fontFamily: fonts.heading, color: "#FFFFFF" },
   link: {
     fontSize: 15,
     fontFamily: fonts.subheading,
     color: colors.primary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

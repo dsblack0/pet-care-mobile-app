@@ -1,5 +1,5 @@
 // Data access for the Home screen, read from Firestore.
-import type { Timestamp } from 'firebase/firestore';
+import type { Timestamp } from "firebase/firestore";
 
 import {
   getChallengesForPet,
@@ -10,8 +10,15 @@ import {
   getUser,
   getUserPetsForUser,
   getUsersById,
-} from '@/lib/db';
-import type { CareSchedule, Challenge, Level, Memory, Pet, User } from '@/types/firestore';
+} from "@/lib/db";
+import type {
+  CareSchedule,
+  Challenge,
+  Level,
+  Memory,
+  Pet,
+  User,
+} from "@/types/firestore";
 
 export function toDate(value: Timestamp): Date {
   return value.toDate();
@@ -21,7 +28,9 @@ export async function fetchUser(userId: string): Promise<User | null> {
   return getUser(userId);
 }
 
-export async function fetchUsers(userIds: string[]): Promise<Record<string, User>> {
+export async function fetchUsers(
+  userIds: string[],
+): Promise<Record<string, User>> {
   return getUsersById(userIds);
 }
 
@@ -29,7 +38,9 @@ export async function fetchPetsForUser(userId: string): Promise<Pet[]> {
   const links = await getUserPetsForUser(userId);
   const pets = await Promise.all(links.map((l) => getPet(l.petId.id)));
   // Alphabetical so the default (first) pet is the same every time.
-  return pets.filter((p): p is Pet => !!p).sort((a, b) => a.name.localeCompare(b.name));
+  return pets
+    .filter((p): p is Pet => !!p)
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export type PetHomeData = {
@@ -52,12 +63,17 @@ export async function fetchPetHome(pet: Pet): Promise<PetHomeData> {
 
   const challenge =
     challenges
-      .filter((c) => c.completionStatus === 'in_progress')
-      .sort((a, b) => toDate(a.endDate).getTime() - toDate(b.endDate).getTime())[0] ?? null;
+      .filter((c) => c.completionStatus === "in_progress")
+      .sort(
+        (a, b) => toDate(a.endDate).getTime() - toDate(b.endDate).getTime(),
+      )[0] ?? null;
 
   const usersById = await fetchUsers([
     ...(challenge?.participants ?? []).map((r) => r.id),
-    ...memories.flatMap((m) => [m.createdBy.id, ...m.participants.map((r) => r.id)]),
+    ...memories.flatMap((m) => [
+      m.createdBy.id,
+      ...m.participants.map((r) => r.id),
+    ]),
   ]);
 
   // petPhotoPath is a Storage path; screens resolve it with useImageUrl when they show it.

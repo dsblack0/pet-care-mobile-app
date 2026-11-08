@@ -1,7 +1,4 @@
-import {
-  DocumentReference,
-  Timestamp
-} from "firebase/firestore";
+import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export interface Recap {
   recapId: string;
@@ -26,7 +23,7 @@ export const createRecap = (
   startDate: Timestamp,
   endDate: Timestamp,
   memoriesUsed: DocumentReference[],
-  exportPath: string | null = null
+  exportPath: string | null = null,
 ): NewRecap => {
   return {
     petId,

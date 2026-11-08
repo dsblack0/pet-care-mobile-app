@@ -1,27 +1,30 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { router } from "expo-router";
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { fieldStyles } from '@/components/form/fieldStyles';
-import { OnboardingShell, onboardingStyles } from '@/components/onboarding/OnboardingShell';
-import { colors, fonts } from '@/constants/theme';
-import { onboardingStore, updateAnswers } from '@/lib/onboardingData';
+import { fieldStyles } from "@/components/form/fieldStyles";
+import {
+  OnboardingShell,
+  onboardingStyles,
+} from "@/components/onboarding/OnboardingShell";
+import { colors, fonts } from "@/constants/theme";
+import { onboardingStore, updateAnswers } from "@/lib/onboardingData";
 
 const SUGGESTIONS = [
-  'Low energy',
-  'Short walks only',
-  'Food allergies',
-  'Special diet',
-  'Shy with strangers',
-  'Indoor only',
-  'Recovering from an injury',
+  "Low energy",
+  "Short walks only",
+  "Food allergies",
+  "Special diet",
+  "Shy with strangers",
+  "Indoor only",
+  "Recovering from an injury",
 ];
 
 export default function OnboardingCareNotesScreen() {
   const { petName, restrictions } = onboardingStore.useValue();
-  const [other, setOther] = useState('');
-  const name = petName || 'your pet';
+  const [other, setOther] = useState("");
+  const name = petName || "your pet";
 
   const toggle = (note: string) =>
     updateAnswers({
@@ -32,20 +35,24 @@ export default function OnboardingCareNotesScreen() {
 
   const addOther = () => {
     const note = other.trim();
-    if (note && !restrictions.includes(note)) updateAnswers({ restrictions: [...restrictions, note] });
-    setOther('');
+    if (note && !restrictions.includes(note))
+      updateAnswers({ restrictions: [...restrictions, note] });
+    setOther("");
   };
 
   // Suggestions first, then anything typed in.
-  const chips = [...SUGGESTIONS, ...restrictions.filter((r) => !SUGGESTIONS.includes(r))];
+  const chips = [
+    ...SUGGESTIONS,
+    ...restrictions.filter((r) => !SUGGESTIONS.includes(r)),
+  ];
 
   return (
     <OnboardingShell
       step={6}
       title="Anything we should work around?"
       subtitle={`Challenges will skip anything that isn’t right for ${name}.`}
-      buttonLabel={restrictions.length ? 'Continue' : 'Nothing to note'}
-      onPress={() => router.push('/plan')}
+      buttonLabel={restrictions.length ? "Continue" : "Nothing to note"}
+      onPress={() => router.push("/plan")}
     >
       <View style={styles.chips}>
         {chips.map((note) => {
@@ -58,8 +65,12 @@ export default function OnboardingCareNotesScreen() {
               accessibilityRole="checkbox"
               accessibilityState={{ checked: on }}
             >
-              {on && <Ionicons name="checkmark" size={16} color={colors.primary} />}
-              <Text style={[styles.chipText, on && styles.chipTextOn]}>{note}</Text>
+              {on && (
+                <Ionicons name="checkmark" size={16} color={colors.primary} />
+              )}
+              <Text style={[styles.chipText, on && styles.chipTextOn]}>
+                {note}
+              </Text>
             </Pressable>
           );
         })}
@@ -93,10 +104,10 @@ export default function OnboardingCareNotesScreen() {
 }
 
 const styles = StyleSheet.create({
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     paddingHorizontal: 16,
     height: 44,
@@ -108,15 +119,15 @@ const styles = StyleSheet.create({
   chipOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   chipText: { fontSize: 15, color: colors.text },
   chipTextOn: { fontFamily: fonts.subheading, color: colors.primary },
-  row: { flexDirection: 'row', gap: 10 },
+  row: { flexDirection: "row", gap: 10 },
   input: { flex: 1, minWidth: 0 },
   add: {
     width: 50,
     height: 50,
     borderRadius: 14,
     backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   disabled: { opacity: 0.45 },
 });

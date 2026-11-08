@@ -15,7 +15,7 @@ export type NewChallengePreference = Omit<
 export const createChallengePreference = (
   petId: DocumentReference,
   userIds: DocumentReference[],
-  activityTypes: string[]
+  activityTypes: string[],
 ): NewChallengePreference => {
   return {
     petId,

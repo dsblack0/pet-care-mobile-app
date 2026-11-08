@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp } from "firebase/firestore";
 
 export interface NotificationPreferences {
   email: boolean;
@@ -22,7 +22,7 @@ export const createUser = (
   name: string,
   email: string,
   notifications: NotificationPreferences,
-  profilePhotoPath: string | null = null
+  profilePhotoPath: string | null = null,
 ): NewUser => {
   return {
     name,
@@ -33,4 +33,3 @@ export const createUser = (
     notifications,
   };
 };
-

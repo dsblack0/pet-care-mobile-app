@@ -1,6 +1,6 @@
 // The device's current location for the Log Activity form.
-import * as Location from 'expo-location';
-import { Platform } from 'react-native';
+import * as Location from "expo-location";
+import { Platform } from "react-native";
 
 export type Place = {
   latitude: number;
@@ -13,8 +13,10 @@ export class LocationPermissionError extends Error {}
 
 export async function getCurrentPlace(): Promise<Place> {
   const { status } = await Location.requestForegroundPermissionsAsync();
-  if (status !== 'granted') {
-    throw new LocationPermissionError('Location access is off. You can turn it on in Settings.');
+  if (status !== "granted") {
+    throw new LocationPermissionError(
+      "Location access is off. You can turn it on in Settings.",
+    );
   }
 
   const { coords } = await Location.getCurrentPositionAsync({
@@ -23,14 +25,22 @@ export async function getCurrentPlace(): Promise<Place> {
   const fallback = `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`;
 
   // Reverse geocoding is iOS/Android only.
-  if (Platform.OS === 'web') return { ...coords, label: fallback };
+  if (Platform.OS === "web") return { ...coords, label: fallback };
   try {
     const [address] = await Location.reverseGeocodeAsync(coords);
     const parts = [address?.name ?? address?.street, address?.city].filter(
       (p, i, all): p is string => !!p && all.indexOf(p) === i,
     );
-    return { latitude: coords.latitude, longitude: coords.longitude, label: parts.join(', ') || fallback };
+    return {
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      label: parts.join(", ") || fallback,
+    };
   } catch {
-    return { latitude: coords.latitude, longitude: coords.longitude, label: fallback };
+    return {
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      label: fallback,
+    };
   }
 }

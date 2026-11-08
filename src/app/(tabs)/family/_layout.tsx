@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack } from "expo-router";
 
 // Profile and Tutorials live under the Family tab so the tab bar stays visible.
 export default function FamilyLayout() {

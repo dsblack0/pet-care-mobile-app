@@ -1,9 +1,15 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import { colors, fonts } from '@/constants/theme';
-import { getCurrentPlace, type Place } from '@/lib/location';
+import { colors, fonts } from "@/constants/theme";
+import { getCurrentPlace, type Place } from "@/lib/location";
 
 type Props = {
   place: Place | null;
@@ -64,7 +70,9 @@ export function LocationCard({ place, onChange }: Props) {
             )}
           </View>
           <View style={styles.flex}>
-            <Text style={styles.action}>{finding ? 'Finding you…' : 'Add current location'}</Text>
+            <Text style={styles.action}>
+              {finding ? "Finding you…" : "Add current location"}
+            </Text>
             <Text style={styles.hint}>Remember where it happened</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
@@ -84,15 +92,15 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 8,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  row: { flexDirection: "row", alignItems: "center", gap: 12 },
   flex: { flex: 1, minWidth: 0 },
   icon: {
     width: 44,
     height: 44,
     borderRadius: 14,
     backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   iconSet: { backgroundColor: colors.openBg },
   action: { fontSize: 16, fontFamily: fonts.subheading, color: colors.primary },

@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from "react";
 
 // Minimal shared state for values several screens need (e.g. the selected pet).
 export function createStore<T>(initial: T) {

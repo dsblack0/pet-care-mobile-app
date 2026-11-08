@@ -1,20 +1,27 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Image, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 
-import { ACTIVITY_ICONS } from '@/components/home/ActivityIcon';
-import { activityTint, fonts } from '@/constants/theme';
-import { useImageUrl } from '@/lib/storage';
-import type { Memory } from '@/types/firestore';
+import { ACTIVITY_ICONS } from "@/components/home/ActivityIcon";
+import { activityTint, fonts } from "@/constants/theme";
+import { useImageUrl } from "@/lib/storage";
+import type { Memory } from "@/types/firestore";
 
 export const ACTIVITY_TAG: Record<string, string> = {
-  Walk: 'Walk',
-  Feed: 'Feed',
-  Play: 'Play',
-  Train: 'Training',
-  Groom: 'Grooming',
-  Medication: 'Medication',
-  Photo: 'Photo',
-  Other: 'Other',
+  Walk: "Walk",
+  Feed: "Feed",
+  Play: "Play",
+  Train: "Training",
+  Groom: "Grooming",
+  Medication: "Medication",
+  Photo: "Photo",
+  Other: "Other",
 };
 
 type Props = {
@@ -35,7 +42,7 @@ export function MemoryPhoto({ memory, style, tag }: Props) {
         <Image source={{ uri: url }} style={StyleSheet.absoluteFill} />
       ) : (
         <Ionicons
-          name={ACTIVITY_ICONS[memory.activityType] ?? 'image-outline'}
+          name={ACTIVITY_ICONS[memory.activityType] ?? "image-outline"}
           size={28}
           color={tint.fg}
           style={styles.icon}
@@ -51,15 +58,20 @@ export function MemoryPhoto({ memory, style, tag }: Props) {
 }
 
 const styles = StyleSheet.create({
-  box: { borderRadius: 16, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  box: {
+    borderRadius: 16,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   icon: { opacity: 0.6 },
   tag: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 8,
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: "rgba(255,255,255,0.9)",
   },
   tagText: { fontSize: 12, fontFamily: fonts.heading },
 });

@@ -1,9 +1,9 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useState } from "react";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { fieldStyles } from '@/components/form/fieldStyles';
-import { colors, fonts } from '@/constants/theme';
+import { fieldStyles } from "@/components/form/fieldStyles";
+import { colors, fonts } from "@/constants/theme";
 
 type Props<T extends string> = {
   label: string;
@@ -36,10 +36,15 @@ export function SelectField<T extends string>({
         <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpen(false)}
+      >
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           <View style={styles.sheet}>
-            <Text style={styles.title}>{label.replace(' *', '')}</Text>
+            <Text style={styles.title}>{label.replace(" *", "")}</Text>
             {options.map((o) => (
               <Pressable
                 key={o}
@@ -50,7 +55,9 @@ export function SelectField<T extends string>({
                 }}
               >
                 <Text style={styles.optionText}>{o}</Text>
-                {o === value && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                {o === value && (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                )}
               </Pressable>
             ))}
           </View>
@@ -63,11 +70,15 @@ export function SelectField<T extends string>({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(42,33,28,0.35)',
-    justifyContent: 'center',
+    backgroundColor: "rgba(42,33,28,0.35)",
+    justifyContent: "center",
     padding: 32,
   },
-  sheet: { backgroundColor: colors.surface, borderRadius: 20, paddingVertical: 10 },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    paddingVertical: 10,
+  },
   title: {
     fontSize: 18,
     fontFamily: fonts.heading,
@@ -76,9 +87,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   option: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 14,
   },

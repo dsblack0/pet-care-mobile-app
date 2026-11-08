@@ -1,16 +1,25 @@
-import { router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
-import { useSharedValue } from 'react-native-reanimated';
+import { router } from "expo-router";
+import { StyleSheet, Text, View } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 
-import { FooterLink, OnboardingShell } from '@/components/onboarding/OnboardingShell';
-import { PetFace } from '@/components/pet/PetFace';
-import { colors, fonts } from '@/constants/theme';
-import { enterDemoMode } from '@/lib/auth';
+import {
+  FooterLink,
+  OnboardingShell,
+} from "@/components/onboarding/OnboardingShell";
+import { PetFace } from "@/components/pet/PetFace";
+import { colors, fonts } from "@/constants/theme";
+import { enterDemoMode } from "@/lib/auth";
 
 const POINTS = [
-  { title: 'Share the care', body: 'Everyone logs walks, meals and play in one place.' },
-  { title: 'Weekly challenges', body: 'Small goals the whole family works on together.' },
-  { title: 'Keep the memories', body: 'Photos and moments, saved as you go.' },
+  {
+    title: "Share the care",
+    body: "Everyone logs walks, meals and play in one place.",
+  },
+  {
+    title: "Weekly challenges",
+    body: "Small goals the whole family works on together.",
+  },
+  { title: "Keep the memories", body: "Photos and moments, saved as you go." },
 ];
 
 export default function WelcomeScreen() {
@@ -24,17 +33,34 @@ export default function WelcomeScreen() {
       hero={
         <View style={styles.hero}>
           <View style={styles.halo}>
-            <PetFace species="Dog" mood="happy" size={150} scrollY={scrollY} atBottom={atBottom} />
+            <PetFace
+              species="Dog"
+              mood="happy"
+              size={150}
+              scrollY={scrollY}
+              atBottom={atBottom}
+            />
           </View>
         </View>
       }
       buttonLabel="Sign in"
-      onPress={() => router.push('/sign-in')}
+      onPress={() => router.push("/sign-in")}
       footer={
         <>
-          <FooterLink label="Create a new account" onPress={() => router.push('/create-account')} />
-          <FooterLink label="Have an invitation code?" onPress={() => router.push('/invite-code')} />
-          {__DEV__ && <FooterLink label="Browse demo data (dev only)" onPress={enterDemoMode} />}
+          <FooterLink
+            label="Create a new account"
+            onPress={() => router.push("/create-account")}
+          />
+          <FooterLink
+            label="Have an invitation code?"
+            onPress={() => router.push("/invite-code")}
+          />
+          {__DEV__ && (
+            <FooterLink
+              label="Browse demo data (dev only)"
+              onPress={enterDemoMode}
+            />
+          )}
         </>
       }
     >
@@ -56,27 +82,31 @@ export default function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: { alignItems: 'center', paddingTop: 8 },
+  hero: { alignItems: "center", paddingTop: 8 },
   halo: {
     width: 210,
     height: 210,
     borderRadius: 105,
     backgroundColor: colors.peach,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   points: { gap: 14 },
-  point: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
+  point: { flexDirection: "row", gap: 14, alignItems: "flex-start" },
   dot: {
     width: 32,
     height: 32,
     borderRadius: 16,
     backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   dotText: { fontSize: 15, fontFamily: fonts.heading, color: colors.primary },
   pointText: { flex: 1, gap: 2 },
-  pointTitle: { fontSize: 16, fontFamily: fonts.subheading, color: colors.text },
+  pointTitle: {
+    fontSize: 16,
+    fontFamily: fonts.subheading,
+    color: colors.text,
+  },
   pointBody: { fontSize: 14, lineHeight: 20, color: colors.textMuted },
 });

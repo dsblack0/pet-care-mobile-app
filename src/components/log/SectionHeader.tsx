@@ -1,8 +1,14 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from "react-native";
 
-import { colors, fonts } from '@/constants/theme';
+import { colors, fonts } from "@/constants/theme";
 
-export function SectionHeader({ title, hint }: { title: string; hint?: string }) {
+export function SectionHeader({
+  title,
+  hint,
+}: {
+  title: string;
+  hint?: string;
+}) {
   return (
     <View style={styles.row}>
       <Text style={styles.title}>{title}</Text>
@@ -13,9 +19,9 @@ export function SectionHeader({ title, hint }: { title: string; hint?: string })
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
     marginBottom: 12,
   },
   title: { fontSize: 20, fontFamily: fonts.heading, color: colors.text },

@@ -1,18 +1,18 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useState } from "react";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, fonts } from '@/constants/theme';
-import { formatTime } from '@/lib/format';
+import { colors, fonts } from "@/constants/theme";
+import { formatTime } from "@/lib/format";
 
 /** Minutes before now. 0 = now. */
 const OFFSETS = [0, 15, 30, 60, 120, 180];
 
 function offsetLabel(minutes: number): string {
-  if (minutes === 0) return 'Now';
+  if (minutes === 0) return "Now";
   if (minutes < 60) return `${minutes} min ago`;
   const hours = minutes / 60;
-  return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  return `${hours} hour${hours === 1 ? "" : "s"} ago`;
 }
 
 type Props = { minutesAgo: number; onChange: (minutesAgo: number) => void };
@@ -24,7 +24,11 @@ export function WhenField({ minutesAgo, onChange }: Props) {
 
   return (
     <>
-      <Pressable style={styles.field} onPress={() => setOpen(true)} accessibilityRole="button">
+      <Pressable
+        style={styles.field}
+        onPress={() => setOpen(true)}
+        accessibilityRole="button"
+      >
         <Text style={styles.value}>
           {minutesAgo === 0 || !pickedAt
             ? offsetLabel(minutesAgo)
@@ -33,7 +37,12 @@ export function WhenField({ minutesAgo, onChange }: Props) {
         <Ionicons name="time-outline" size={22} color={colors.textMuted} />
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpen(false)}
+      >
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>When did it happen?</Text>
@@ -48,7 +57,9 @@ export function WhenField({ minutesAgo, onChange }: Props) {
                 }}
               >
                 <Text style={styles.optionText}>{offsetLabel(m)}</Text>
-                {m === minutesAgo && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                {m === minutesAgo && (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                )}
               </Pressable>
             ))}
           </View>
@@ -66,18 +77,22 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   value: { fontSize: 16, fontFamily: fonts.subheading, color: colors.text },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
     padding: 32,
   },
-  sheet: { backgroundColor: colors.surface, borderRadius: 20, paddingVertical: 10 },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    paddingVertical: 10,
+  },
   sheetTitle: {
     fontSize: 18,
     fontFamily: fonts.heading,
@@ -86,9 +101,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   option: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 14,
   },

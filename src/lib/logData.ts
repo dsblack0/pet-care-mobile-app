@@ -1,20 +1,31 @@
 // Data access for the Log Activity screen, backed by Firestore. Memories are built with the
 // team's models/ and firebaseServices/ helpers.
-import { collection, doc, GeoPoint, setDoc, Timestamp } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  GeoPoint,
+  setDoc,
+  Timestamp,
+} from "firebase/firestore";
 
-import { getFamily, getMemoriesForPet, getPoints, getSchedulesForPet } from '@/lib/db';
-import { toDate } from '@/lib/homeData';
-import { isSameDay } from '@/lib/format';
-import { uploadImage } from '@/lib/storage';
-import { dataVersionStore } from '@/lib/store';
-import type { Memory, User } from '@/types/firestore';
-import { db } from '../../firebaseConfig';
+import {
+  getFamily,
+  getMemoriesForPet,
+  getPoints,
+  getSchedulesForPet,
+} from "@/lib/db";
+import { toDate } from "@/lib/homeData";
+import { isSameDay } from "@/lib/format";
+import { uploadImage } from "@/lib/storage";
+import { dataVersionStore } from "@/lib/store";
+import type { Memory, User } from "@/types/firestore";
+import { db } from "../../firebaseConfig";
 import {
   getCareScheduleReference,
   getPetReference,
   getUserReference,
-} from '../../firebaseServices/memoriesService';
-import { createMemory } from '../../models/memories';
+} from "../../firebaseServices/memoriesService";
+import { createMemory } from "../../models/memories";
 
 /** Family for a pet: userPets by petId -> users. */
 export async function fetchFamily(petId: string): Promise<User[]> {
@@ -23,7 +34,9 @@ export async function fetchFamily(petId: string): Promise<User[]> {
 
 /** points.action -> pointsGained. */
 export async function fetchPointsTable(): Promise<Record<string, number>> {
-  return Object.fromEntries((await getPoints()).map((p) => [p.action, p.pointsGained]));
+  return Object.fromEntries(
+    (await getPoints()).map((p) => [p.action, p.pointsGained]),
+  );
 }
 
 /** What the Log Activity form collects. IDs are plain strings; refs are made here. */
@@ -44,7 +57,11 @@ export type LogActivityInput = {
 };
 
 /** Today's schedule for this activity that hasn't been logged yet, if any. */
-async function findScheduleToLink(petId: string, activityType: string, occurredAt: Date) {
+async function findScheduleToLink(
+  petId: string,
+  activityType: string,
+  occurredAt: Date,
+) {
   const [memories, schedules] = await Promise.all([
     getMemoriesForPet(petId),
     getSchedulesForPet(petId),
@@ -54,29 +71,37 @@ async function findScheduleToLink(petId: string, activityType: string, occurredA
       .filter((m) => isSameDay(toDate(m.occurredAt), occurredAt))
       .map((m) => m.careScheduleId?.id),
   );
-  return schedules.find((s) => s.activityType === activityType && !loggedIds.has(s.careScheduleId));
+  return schedules.find(
+    (s) => s.activityType === activityType && !loggedIds.has(s.careScheduleId),
+  );
 }
 
 export async function logActivity(input: LogActivityInput): Promise<Memory> {
   // A new Firestore document id, generated locally, so the photo can be named after it.
-  const memoryId = doc(collection(db, 'memories')).id;
+  const memoryId = doc(collection(db, "memories")).id;
 
   // Upload first so a failed upload never leaves a memory pointing at a missing image.
   const photoPath = input.localPhotoUri
     ? await uploadImage(input.localPhotoUri, `memories/${memoryId}.jpg`)
     : null;
 
-  const schedule = await findScheduleToLink(input.petId, input.activityType, input.occurredAt);
+  const schedule = await findScheduleToLink(
+    input.petId,
+    input.activityType,
+    input.occurredAt,
+  );
 
   const newMemory = createMemory(
     getPetReference(input.petId),
     getUserReference(input.createdBy),
     Timestamp.fromDate(input.occurredAt),
-    input.description ?? '',
+    input.description ?? "",
     input.activityType,
     input.participants.map(getUserReference),
     photoPath,
-    input.location ? new GeoPoint(input.location.latitude, input.location.longitude) : null,
+    input.location
+      ? new GeoPoint(input.location.latitude, input.location.longitude)
+      : null,
     schedule ? getCareScheduleReference(schedule.careScheduleId) : null,
     input.durationMinutes ?? null,
     input.basePoints,
@@ -84,7 +109,7 @@ export async function logActivity(input: LogActivityInput): Promise<Memory> {
   );
 
   // setDoc (not saveMemory's addDoc) so the document uses the id the photo is named after.
-  await setDoc(doc(db, 'memories', memoryId), newMemory);
+  await setDoc(doc(db, "memories", memoryId), newMemory);
   const memory: Memory = { memoryId, ...newMemory };
   dataVersionStore.set(dataVersionStore.get() + 1);
   return memory;

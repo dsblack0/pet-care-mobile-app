@@ -1,9 +1,14 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet } from "react-native";
 
-import { colors, fonts } from '@/constants/theme';
+import { colors, fonts } from "@/constants/theme";
 
 export const fieldStyles = StyleSheet.create({
-  label: { fontSize: 13, fontFamily: fonts.subheading, color: colors.text, marginBottom: 6 },
+  label: {
+    fontSize: 13,
+    fontFamily: fonts.subheading,
+    color: colors.text,
+    marginBottom: 6,
+  },
   box: {
     height: 50,
     paddingHorizontal: 14,
@@ -11,8 +16,8 @@ export const fieldStyles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   text: { flex: 1, minWidth: 0, fontSize: 15, color: colors.text },

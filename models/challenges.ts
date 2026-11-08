@@ -1,7 +1,4 @@
-import {
-  DocumentReference,
-  Timestamp
-} from "firebase/firestore";
+import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export interface Challenge {
   challengeId: string;
@@ -35,7 +32,7 @@ export const createChallenge = (
   goal: number,
   goalType: string,
   activityTypes: string[],
-  pointReward: number
+  pointReward: number,
 ): NewChallenge => {
   return {
     petId,
@@ -52,6 +49,6 @@ export const createChallenge = (
     goal,
     goalType,
     activityTypes,
-    pointReward
+    pointReward,
   };
 };

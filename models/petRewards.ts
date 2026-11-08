@@ -1,7 +1,4 @@
-import {
-  DocumentReference,
-  Timestamp
-} from "firebase/firestore";
+import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export interface PetReward {
   petRewardId: string;
@@ -16,12 +13,12 @@ export type NewPetReward = Omit<PetReward, "petRewardId">;
 export const createPetReward = (
   rewardId: DocumentReference,
   petId: DocumentReference,
-  rewardExportPath: string | null = null
+  rewardExportPath: string | null = null,
 ): NewPetReward => {
   return {
     rewardId,
     petId,
     unlockedAt: Timestamp.now(),
-    rewardExportPath
+    rewardExportPath,
   };
 };

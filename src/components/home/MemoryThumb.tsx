@@ -1,8 +1,8 @@
-import { Image, StyleSheet } from 'react-native';
+import { Image, StyleSheet } from "react-native";
 
-import { ActivityIcon } from '@/components/home/ActivityIcon';
-import { useImageUrl } from '@/lib/storage';
-import type { Memory } from '@/types/firestore';
+import { ActivityIcon } from "@/components/home/ActivityIcon";
+import { useImageUrl } from "@/lib/storage";
+import type { Memory } from "@/types/firestore";
 
 /** The memory's photo (loaded from its Storage path), or its activity icon. */
 export function MemoryThumb({ memory }: { memory: Memory }) {

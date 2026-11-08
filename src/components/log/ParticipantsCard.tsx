@@ -1,9 +1,9 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, fonts } from '@/constants/theme';
-import { initial } from '@/lib/format';
-import type { User } from '@/types/firestore';
+import { colors, fonts } from "@/constants/theme";
+import { initial } from "@/lib/format";
+import type { User } from "@/types/firestore";
 
 type Props = {
   family: User[];
@@ -12,20 +12,27 @@ type Props = {
   onToggle: (userId: string) => void;
 };
 
-export function ParticipantsCard({ family, currentUserId, selected, onToggle }: Props) {
+export function ParticipantsCard({
+  family,
+  currentUserId,
+  selected,
+  onToggle,
+}: Props) {
   // Current user first, labelled "You".
   const people = [...family].sort((a, b) =>
     a.userId === currentUserId ? -1 : b.userId === currentUserId ? 1 : 0,
   );
-  const nameOf = (u: User) => (u.userId === currentUserId ? 'You' : u.name);
-  const selectedNames = people.filter((u) => selected.includes(u.userId)).map(nameOf);
+  const nameOf = (u: User) => (u.userId === currentUserId ? "You" : u.name);
+  const selectedNames = people
+    .filter((u) => selected.includes(u.userId))
+    .map(nameOf);
 
   const hint =
     selectedNames.length > 1
-      ? `${selectedNames.join(' + ')} selected · eligible for Together Bonus`
+      ? `${selectedNames.join(" + ")} selected · eligible for Together Bonus`
       : selectedNames.length === 1
         ? `${selectedNames[0]} selected · add someone for a Together Bonus`
-        : 'Pick at least one person';
+        : "Pick at least one person";
 
   return (
     <View style={styles.card}>
@@ -42,7 +49,9 @@ export function ParticipantsCard({ family, currentUserId, selected, onToggle }: 
               accessibilityLabel={nameOf(u)}
             >
               <View style={[styles.avatar, active && styles.avatarActive]}>
-                <Text style={[styles.avatarText, active && styles.avatarTextActive]}>
+                <Text
+                  style={[styles.avatarText, active && styles.avatarTextActive]}
+                >
                   {initial(u.name)}
                 </Text>
                 {active && (
@@ -51,7 +60,9 @@ export function ParticipantsCard({ family, currentUserId, selected, onToggle }: 
                   </View>
                 )}
               </View>
-              <Text style={[styles.name, active && styles.nameActive]}>{nameOf(u)}</Text>
+              <Text style={[styles.name, active && styles.nameActive]}>
+                {nameOf(u)}
+              </Text>
             </Pressable>
           );
         })}
@@ -75,23 +86,26 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  row: { flexDirection: 'row', justifyContent: 'space-around' },
-  person: { alignItems: 'center', gap: 6 },
+  row: { flexDirection: "row", justifyContent: "space-around" },
+  person: { alignItems: "center", gap: 6 },
   avatar: {
     width: AVATAR,
     height: AVATAR,
     borderRadius: AVATAR / 2,
     backgroundColor: colors.peach,
     borderWidth: 3,
-    borderColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: "transparent",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  avatarActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  avatarActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+  },
   avatarText: { fontSize: 20, fontFamily: fonts.heading, color: colors.text },
   avatarTextActive: { color: colors.primary },
   check: {
-    position: 'absolute',
+    position: "absolute",
     right: -4,
     bottom: -4,
     width: 22,
@@ -100,14 +114,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderWidth: 2,
     borderColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   name: { fontSize: 14, color: colors.textMuted },
   nameActive: { fontFamily: fonts.subheading, color: colors.text },
   hint: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,

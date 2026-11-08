@@ -1,12 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
-import type { SharedValue } from 'react-native-reanimated';
+import { StyleSheet, Text, View } from "react-native";
+import type { SharedValue } from "react-native-reanimated";
 
-import { ProgressBar } from '@/components/home/ProgressBar';
-import { getFaceSpec } from '@/components/pet/faceSpecs';
-import { PetFace } from '@/components/pet/PetFace';
-import { colors, fonts } from '@/constants/theme';
-import type { PetMood } from '@/lib/care';
-import type { Level, Pet } from '@/types/firestore';
+import { ProgressBar } from "@/components/home/ProgressBar";
+import { getFaceSpec } from "@/components/pet/faceSpecs";
+import { PetFace } from "@/components/pet/PetFace";
+import { colors, fonts } from "@/constants/theme";
+import type { PetMood } from "@/lib/care";
+import type { Level, Pet } from "@/types/firestore";
 
 const FACE_SIZE = 170;
 export const HALO_SIZE = 210;
@@ -46,13 +46,14 @@ export function PetCard({ pet, level, mood, line, scrollY, atBottom }: Props) {
       <Text style={styles.name}>{pet.name}</Text>
       <Text style={styles.level}>
         Level {pet.level}
-        {level ? ` · ${level.title}` : ''}
+        {level ? ` · ${level.title}` : ""}
       </Text>
       {nextLevelPoints > 0 && (
         <View style={styles.progress}>
           <ProgressBar value={pet.totalPoints / nextLevelPoints} />
           <Text style={styles.points}>
-            {pet.totalPoints.toLocaleString()} / {nextLevelPoints.toLocaleString()} Points
+            {pet.totalPoints.toLocaleString()} /{" "}
+            {nextLevelPoints.toLocaleString()} Points
           </Text>
         </View>
       )}
@@ -61,13 +62,13 @@ export function PetCard({ pet, level, mood, line, scrollY, atBottom }: Props) {
 }
 
 const styles = StyleSheet.create({
-  hero: { alignItems: 'center' },
+  hero: { alignItems: "center" },
   halo: {
     width: HALO_SIZE,
     height: HALO_SIZE,
     borderRadius: HALO_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   bubble: {
     marginTop: 14,
@@ -81,20 +82,30 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   bubbleTail: {
-    position: 'absolute',
+    position: "absolute",
     top: -7,
-    alignSelf: 'center',
+    alignSelf: "center",
     width: 12,
     height: 12,
     backgroundColor: colors.surface,
     borderLeftWidth: 1,
     borderTopWidth: 1,
     borderColor: colors.border,
-    transform: [{ rotate: '45deg' }],
+    transform: [{ rotate: "45deg" }],
   },
-  bubbleText: { fontSize: 15, lineHeight: 21, color: colors.text, textAlign: 'center' },
+  bubbleText: {
+    fontSize: 15,
+    lineHeight: 21,
+    color: colors.text,
+    textAlign: "center",
+  },
   name: { fontSize: 34, fontFamily: fonts.heading, color: colors.text },
   level: { fontSize: 16, color: colors.textMuted },
-  progress: { alignSelf: 'stretch', gap: 6, marginTop: 12, paddingHorizontal: 24 },
-  points: { fontSize: 13, color: colors.textMuted, textAlign: 'center' },
+  progress: {
+    alignSelf: "stretch",
+    gap: 6,
+    marginTop: 12,
+    paddingHorizontal: 24,
+  },
+  points: { fontSize: 13, color: colors.textMuted, textAlign: "center" },
 });

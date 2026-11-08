@@ -1,7 +1,4 @@
-import {
-  DocumentReference,
-  Timestamp
-} from "firebase/firestore";
+import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export interface Nudge {
   nudgeId: string;
@@ -19,7 +16,7 @@ export const createNudge = (
   petId: DocumentReference,
   senderId: DocumentReference,
   recipientId: DocumentReference,
-  message: string
+  message: string,
 ): NewNudge => {
   return {
     petId,

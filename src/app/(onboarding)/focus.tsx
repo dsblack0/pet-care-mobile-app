@@ -1,19 +1,26 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { router } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { ActivityIcon } from '@/components/home/ActivityIcon';
-import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
-import { colors, fonts } from '@/constants/theme';
-import { CHALLENGE_ACTIVITIES, onboardingStore, updateAnswers } from '@/lib/onboardingData';
+import { ActivityIcon } from "@/components/home/ActivityIcon";
+import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
+import { colors, fonts } from "@/constants/theme";
+import {
+  CHALLENGE_ACTIVITIES,
+  onboardingStore,
+  updateAnswers,
+} from "@/lib/onboardingData";
 
-const COPY: Record<(typeof CHALLENGE_ACTIVITIES)[number], { label: string; body: string }> = {
-  Feed: { label: 'Feeding', body: 'Meals and treats on time' },
-  Walk: { label: 'Walks', body: 'Getting out and moving' },
-  Train: { label: 'Training', body: 'Tricks, manners, recall' },
-  Play: { label: 'Play', body: 'Games and enrichment' },
-  Groom: { label: 'Grooming', body: 'Brushing, baths, nails' },
-  Medication: { label: 'Medication', body: 'Doses and vet routines' },
+const COPY: Record<
+  (typeof CHALLENGE_ACTIVITIES)[number],
+  { label: string; body: string }
+> = {
+  Feed: { label: "Feeding", body: "Meals and treats on time" },
+  Walk: { label: "Walks", body: "Getting out and moving" },
+  Train: { label: "Training", body: "Tricks, manners, recall" },
+  Play: { label: "Play", body: "Games and enrichment" },
+  Groom: { label: "Grooming", body: "Brushing, baths, nails" },
+  Medication: { label: "Medication", body: "Doses and vet routines" },
 };
 
 export default function OnboardingFocusScreen() {
@@ -29,11 +36,11 @@ export default function OnboardingFocusScreen() {
   return (
     <OnboardingShell
       step={4}
-      title={`What should ${petName || 'your pet'}’s challenges focus on?`}
+      title={`What should ${petName || "your pet"}’s challenges focus on?`}
       subtitle="Pick everything your family wants to do more of together."
       buttonLabel="Continue"
       disabled={activityTypes.length === 0}
-      onPress={() => router.push('/pace')}
+      onPress={() => router.push("/pace")}
     >
       <View style={styles.grid}>
         {CHALLENGE_ACTIVITIES.map((type) => {
@@ -49,7 +56,9 @@ export default function OnboardingFocusScreen() {
               <View style={styles.tileTop}>
                 <ActivityIcon activityType={type} />
                 <View style={[styles.check, on && styles.checkOn]}>
-                  {on && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                  {on && (
+                    <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                  )}
                 </View>
               </View>
               <Text style={styles.label}>{COPY[type].label}</Text>
@@ -63,9 +72,14 @@ export default function OnboardingFocusScreen() {
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 12,
+  },
   tile: {
-    width: '48.5%',
+    width: "48.5%",
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: colors.border,
@@ -75,9 +89,9 @@ const styles = StyleSheet.create({
   },
   tileOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   tileTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 8,
   },
   check: {
@@ -86,8 +100,8 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     borderWidth: 1.5,
     borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   checkOn: { backgroundColor: colors.primary, borderColor: colors.primary },
   label: { fontSize: 16, fontFamily: fonts.subheading, color: colors.text },

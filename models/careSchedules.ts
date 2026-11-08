@@ -14,7 +14,7 @@ export const createCareSchedule = (
   petId: DocumentReference,
   activityType: string,
   scheduledTime: string | null = null,
-  recurrence: "daily" | "weekly" | "monthly" | "yearly" = "daily"
+  recurrence: "daily" | "weekly" | "monthly" | "yearly" = "daily",
 ): NewCareSchedule => {
   return {
     petId,
