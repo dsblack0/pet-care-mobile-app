@@ -20,7 +20,8 @@ import { MemoryCard } from '@/components/log/MemoryCard';
 import { ParticipantsCard } from '@/components/log/ParticipantsCard';
 import { SectionHeader } from '@/components/log/SectionHeader';
 import { WhenField } from '@/components/log/WhenField';
-import { currentUserId } from '@/lib/auth';
+import { auth, currentUserId } from '@/lib/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { colors, fonts } from '@/constants/theme';
 import { usePets } from '@/hooks/usePets';
 import type { Place } from '@/lib/location';
@@ -39,12 +40,19 @@ export default function LogScreen() {
   const [duration, setDuration] = useState<number | 'custom'>(30);
   const [customMinutes, setCustomMinutes] = useState('');
   const [minutesAgo, setMinutesAgo] = useState(0);
-  const [participants, setParticipants] = useState<string[]>([CURRENT_USER_ID]);
+  const [participants, setParticipants] = useState<string[]>([]);
   const [place, setPlace] = useState<Place | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      setParticipants(user ? [user.uid] : []);
+    });
+    return unsubscribe;
+  }, []);
 
   const { pets, pet } = usePets();
   const petId = pet?.petId;
@@ -63,7 +71,7 @@ export default function LogScreen() {
     setDuration(30);
     setCustomMinutes('');
     setMinutesAgo(0);
-    setParticipants([CURRENT_USER_ID]);
+    setParticipants(auth.currentUser ? [auth.currentUser.uid] : []);
     setPlace(null);
     setPhotoUri(null);
     setCaption('');

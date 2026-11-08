@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createUserWithEmailAndPassword,
   getAuth,
+  sendEmailVerification,
   getReactNativePersistence,
   initializeAuth,
   onAuthStateChanged,
@@ -63,6 +64,7 @@ export async function createAccount(name: string, email: string, password: strin
       doc(db, 'users', user.uid),
       createUser(name.trim(), email.trim().toLowerCase(), { email: true, text: false, push: true }),
     );
+    await sendEmailVerification(user);
   } catch (e) {
     sessionStore.set('signedOut');
     throw e;
@@ -105,4 +107,14 @@ export function authErrorMessage(e: unknown): string {
     default:
       return e instanceof Error ? e.message : String(e);
   }
+}
+
+export async function resendVerificationEmail() {
+  if (!auth.currentUser) throw new Error('Sign in first.');
+  await sendEmailVerification(auth.currentUser);
+}
+export async function refreshEmailVerification() {
+  if (!auth.currentUser) throw new Error('Sign in first.');
+  await auth.currentUser.reload();
+  return auth.currentUser.emailVerified;
 }

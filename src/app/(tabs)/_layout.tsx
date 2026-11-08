@@ -34,8 +34,9 @@ function tabIcon(filled: IconName, outline: IconName) {
 }
 
 export default function TabLayout() {
-  // Signed out or still onboarding: start at Welcome.
-  if (sessionStore.useValue() !== 'ready') return <Redirect href="/welcome" />;
+  const session = sessionStore.useValue();
+  if (session === 'loading') return null;
+  if (session !== 'ready') return <Redirect href={session === 'onboarding' ? '/pet' : '/welcome'} />;
 
   return (
     <Tabs

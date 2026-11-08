@@ -5,7 +5,6 @@ import { useSharedValue } from 'react-native-reanimated';
 import { FooterLink, OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import { PetFace } from '@/components/pet/PetFace';
 import { colors, fonts } from '@/constants/theme';
-import { enterDemoMode } from '@/lib/auth';
 
 const POINTS = [
   { title: 'Share the care', body: 'Everyone logs walks, meals and play in one place.' },
@@ -33,7 +32,7 @@ export default function WelcomeScreen() {
       footer={
         <>
           <FooterLink label="I already have an account" onPress={() => router.push('/sign-in')} />
-          {__DEV__ && <FooterLink label="Browse demo data (dev only)" onPress={enterDemoMode} />}
+          <FooterLink label="Have an invitation code?" onPress={() => router.push('/invite-code')} />
         </>
       }
     >

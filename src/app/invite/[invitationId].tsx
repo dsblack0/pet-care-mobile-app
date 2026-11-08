@@ -9,7 +9,9 @@ import { AvatarStack } from '@/components/challenges/AvatarStack';
 import { getFaceSpec } from '@/components/pet/faceSpecs';
 import { PetAvatar } from '@/components/pet/PetAvatar';
 import { PetFace } from '@/components/pet/PetFace';
-import { CURRENT_USER_ID } from '@/constants/session';
+import { currentUserId, auth, resendVerificationEmail, refreshEmailVerification } from '@/lib/auth';
+import { onAuthStateChanged } from 'firebase/auth';
+import { rememberInvitation } from '@/lib/pendingInvite';
 import { colors, fonts } from '@/constants/theme';
 import { toDate } from '@/lib/homeData';
 import { acceptInvite, fetchInviteDetails, type InviteDetails } from '@/lib/inviteData';
@@ -34,12 +36,17 @@ export default function AcceptInviteScreen() {
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authRevision, setAuthRevision] = useState(0);
+
+  useEffect(() => onAuthStateChanged(auth, () => setAuthRevision(n => n + 1)), []);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     (async () => {
       try {
-        const d = await fetchInviteDetails(invitationId, CURRENT_USER_ID);
+        if (invitationId) await rememberInvitation(invitationId);
+        const d = await fetchInviteDetails(invitationId, auth.currentUser?.uid ?? '');
         if (!cancelled) setDetails(d);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
@@ -50,7 +57,7 @@ export default function AcceptInviteScreen() {
     return () => {
       cancelled = true;
     };
-  }, [invitationId]);
+  }, [invitationId, authRevision]);
 
   const goHome = (petId?: string) => {
     if (petId) selectedPetStore.set(petId);
@@ -62,7 +69,7 @@ export default function AcceptInviteScreen() {
     setJoining(true);
     setError(null);
     try {
-      await acceptInvite(details.invitation, CURRENT_USER_ID);
+      await acceptInvite(details.invitation, currentUserId());
       setJoined(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -118,6 +125,20 @@ export default function AcceptInviteScreen() {
         title="This invite has expired"
         subtitle={`Invites last 7 days. Ask ${senderName} to send you a new one.`}
         button={{ label: 'Go home', onPress: () => goHome() }}
+      />
+    );
+  }
+
+  if (details.state === 'signIn' || details.state === 'verifyEmail') {
+    return (
+      <Frame
+        hero={<PetHero pet={pet} />}
+        title={details.state === 'signIn' ? 'Sign in to accept your invitation' : 'Verify your email first'}
+        subtitle={details.state === 'signIn' ? `Sign in or create an account using ${invitation.toEmailAddress}. You'll return here after signing in.` : `Check ${invitation.toEmailAddress} for your Firebase verification email. Then tap I've verified my email.`}
+        button={{ label: details.state === 'signIn' ? 'Sign in' : 'Resend verification email', onPress: () => {
+          if (details.state === 'signIn') router.push('/sign-in');
+          else void refreshEmailVerification().then(() => setAuthRevision(n => n + 1)).catch(e => setError(String(e)));
+        } }}
       />
     );
   }

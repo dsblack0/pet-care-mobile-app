@@ -9,6 +9,7 @@ import {
 } from '@/components/onboarding/OnboardingShell';
 import { TextField } from '@/components/onboarding/TextField';
 import { authErrorMessage, signIn } from '@/lib/auth';
+import { pendingInvitation } from '@/lib/pendingInvite';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -26,6 +27,8 @@ export default function SignInScreen() {
     setError(null);
     try {
       await signIn(email, password);
+      const token = await pendingInvitation();
+      if (token) router.replace({ pathname: '/invite/[invitationId]', params: { invitationId: token } });
     } catch (e) {
       setError(authErrorMessage(e));
       setBusy(false);

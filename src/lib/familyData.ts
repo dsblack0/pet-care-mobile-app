@@ -11,8 +11,7 @@ import {
 import { toDate } from '@/lib/homeData';
 import { dataVersionStore } from '@/lib/store';
 import type { CareSchedule, Memory, User } from '@/types/firestore';
-import { getPetReference, getUserReference, saveNudge } from '../../firebaseServices/nudgesService';
-import { createNudge } from '../../models/nudges';
+import { remindFamilyMember } from '../../modelViews/notificationController';
 
 /** Monday 00:00 of the current week, local time. */
 function startOfWeek(now: Date): Date {
@@ -159,12 +158,7 @@ export async function sendNudge(
   recipientId: string,
   petName: string,
 ) {
-  const nudge = createNudge(
-    getPetReference(petId),
-    getUserReference(senderId),
-    getUserReference(recipientId),
-    `Spend some time with ${petName} today!`,
-  );
-  await saveNudge(nudge);
-  dataVersionStore.set(dataVersionStore.get() + 1);
+  void senderId;
+  void petName;
+  await remindFamilyMember(petId, recipientId);
 }

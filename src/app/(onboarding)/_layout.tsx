@@ -5,7 +5,9 @@ import { sessionStore } from '@/lib/auth';
 
 export default function OnboardingLayout() {
   // Signed in and set up: go to the app.
-  if (sessionStore.useValue() === 'ready') return <Redirect href="/" />;
+  const session = sessionStore.useValue();
+  if (session === 'loading') return null;
+  if (session === 'ready') return <Redirect href="/" />;
 
   return (
     <Stack

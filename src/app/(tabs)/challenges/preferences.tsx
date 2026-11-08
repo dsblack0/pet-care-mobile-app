@@ -8,7 +8,7 @@ import { ActivityChoiceGrid } from '@/components/challenges/ActivityChoiceGrid';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { ParticipantsCard } from '@/components/log/ParticipantsCard';
 import { SectionHeader } from '@/components/log/SectionHeader';
-import { CURRENT_USER_ID } from '@/constants/session';
+import { currentUserId } from '@/lib/auth';
 import { colors, fonts } from '@/constants/theme';
 import { usePets } from '@/hooks/usePets';
 import {
@@ -103,7 +103,7 @@ export default function ChallengePreferencesScreen() {
             <SectionHeader title="Who takes part?" hint="Select all that apply" />
             <ParticipantsCard
               family={family}
-              currentUserId={CURRENT_USER_ID}
+              currentUserId={currentUserId()}
               selected={userIds}
               onToggle={(id) => setUserIds((cur) => toggle(cur, id))}
             />

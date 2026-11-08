@@ -105,10 +105,10 @@ export default function InviteScreen() {
             {error ? (
               <Text style={styles.error}>{error}</Text>
             ) : sentTo ? (
-              <Text style={styles.success}>Invite sent to {sentTo}.</Text>
+              <Text style={styles.success}>Invitation link ready for {sentTo}. Share it using your device.</Text>
             ) : (
               <Text style={styles.helper}>
-                We&apos;ll email a secure invitation. It expires in 7 days.
+                We'll open your device's share sheet with a secure link. Only the invited verified email can join. Expires in 7 days.
               </Text>
             )}
 
@@ -120,7 +120,7 @@ export default function InviteScreen() {
             >
               <Ionicons name="paper-plane-outline" size={20} color="#FFFFFF" />
               <Text style={styles.buttonText}>
-                Send invite to {pet?.name ?? 'your'}&apos;s Family
+                Share invite to {pet?.name ?? 'your'}&apos;s Family
               </Text>
             </Pressable>
           </View>
@@ -156,10 +156,10 @@ export default function InviteScreen() {
                       onPress={() => resend(inv.invitationId)}
                       disabled={wasResent}
                       accessibilityRole="button"
-                      accessibilityLabel={`Resend invite to ${inv.toEmailAddress}`}
+                      accessibilityLabel={`Generate and share a replacement invitation for ${inv.toEmailAddress}`}
                     >
                       <Text style={[styles.resend, wasResent && styles.resendDone]}>
-                        {wasResent ? 'Resent' : 'Resend'}
+                        {wasResent ? 'Shared' : 'New link'}
                       </Text>
                     </Pressable>
                   </View>
