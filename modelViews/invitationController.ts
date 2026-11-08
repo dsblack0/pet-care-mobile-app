@@ -39,7 +39,8 @@ async function createInvite(petId: string, address: string, oldInvitationId?: st
     )
   ) {
     throw new Error('Already a family member.');
-  }  const active = await pendingInvitations(petId);
+  }
+  const active = await pendingInvitations(petId);
   if (active.some(inv => inv.toEmailAddress === address && inv.invitationId !== oldInvitationId)) throw new Error('An invitation is already pending for this email.');
   const invitation = doc(collection(db, 'invitations'));
   const membership = doc(collection(db, 'userPets'));
@@ -76,7 +77,7 @@ export function invitationLink(token: string, httpsOrigin?: string): string {
 }
 export async function shareInvitation(token: string, httpsOrigin?: string) {
   const link = invitationLink(token, httpsOrigin);
-  return Share.share({ message: `You're invited to join my pet family! Open: ${link}\n\nOr enter invitation code: ${token}\nSign in with the invited email address.`, url: link });
+  return Share.share({ message: `You're invited to join my pet family!\n\nInvitation code (copy this):\n${token}\n\nOpen in the app: ${link}\n\nIf the link isn't clickable, open Pawmily and choose Have an invitation code?\n\nSign in and verify your email to join.`, url: link });
 }
 
 export async function acceptInvitation(token: string): Promise<AcceptedInvite> {
@@ -90,7 +91,7 @@ export async function acceptInvitation(token: string): Promise<AcceptedInvite> {
   const initial = await getDoc(invitation);
   if (!initial.exists()) throw new Error('Invitation not found.');
   const initialData = initial.data();
-  if (normalize(initialData.toEmailAddress) !== address) throw new Error('This invitation was sent to a different email.');
+  if (normalize(initialData.toEmailAddress) !== address) throw new Error('This invitation cannot be used with this account.');
   const petId = initialData.petId.id as string;
   const existing = await getDocs(query(collection(db, 'userPets'), where('petId', '==', petReference(petId)), where('userId', '==', userReference(uid))));
   if (!existing.empty) return { petId, alreadyMember: true };
@@ -99,7 +100,7 @@ export async function acceptInvitation(token: string): Promise<AcceptedInvite> {
     if (!snap.exists()) throw new Error('Invitation not found.');
     const data = snap.data();
     if (data.acceptanceStatus || data.revokedAt || millis(data.expiryDate) <= Date.now()) throw new Error('Invitation expired, revoked or already used.');
-    if (normalize(data.toEmailAddress) !== address) throw new Error('Invitation email does not match your account.');
+    if (normalize(data.toEmailAddress) !== address) throw new Error('This invitation cannot be used with this account.');
     const member = doc(db, 'userPets', data.membershipId);
     const memberSnap = await tx.get(member);
     if (memberSnap.exists()) throw new Error('Invitation already used.');

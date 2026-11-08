@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,12 +11,15 @@ import { PetAvatar } from '@/components/pet/PetAvatar';
 import { PetFace } from '@/components/pet/PetFace';
 import { currentUserId, auth, resendVerificationEmail, refreshEmailVerification } from '@/lib/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-import { rememberInvitation } from '@/lib/pendingInvite';
+import { rememberInvitation, clearPendingInvitation } from '@/lib/pendingInvite';
+import { signOut } from '@/lib/auth';
 import { colors, fonts } from '@/constants/theme';
 import { toDate } from '@/lib/homeData';
 import { acceptInvite, fetchInviteDetails, type InviteDetails } from '@/lib/inviteData';
 import { selectedPetStore } from '@/lib/store';
 import type { Pet } from '@/types/firestore';
+
+const WRONG_EMAIL_MESSAGE = 'This invitation cannot be used with your email. Please check your invitation or contact the person who sent it.';
 
 /** "Milo is a 3-year-old Labrador." */
 function petLine(pet: Pet): string {
@@ -46,10 +49,21 @@ export default function AcceptInviteScreen() {
     (async () => {
       try {
         if (invitationId) await rememberInvitation(invitationId);
-        const d = await fetchInviteDetails(invitationId, auth.currentUser?.uid ?? '');
-        if (!cancelled) setDetails(d);
+        if (!auth.currentUser) {
+          if (!cancelled) setDetails(null);
+          return;
+        }
+        const d = await fetchInviteDetails(invitationId, auth.currentUser.uid);
+        if (!cancelled) {
+          if (d?.state === 'wrongEmail') {
+            await clearPendingInvitation();
+            await signOut();
+            Alert.alert('Invitation unavailable', WRONG_EMAIL_MESSAGE, [{ text: 'OK', onPress: () => router.replace('/welcome') }]);
+            router.replace('/welcome');
+          } else setDetails(d);
+        }
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+        if (!cancelled) setError('This invitation is unavailable for this account.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -61,7 +75,7 @@ export default function AcceptInviteScreen() {
 
   const goHome = (petId?: string) => {
     if (petId) selectedPetStore.set(petId);
-    router.replace('/');
+    router.replace(petId ? '/' : '/welcome');
   };
 
   const join = async () => {
@@ -72,7 +86,15 @@ export default function AcceptInviteScreen() {
       await acceptInvite(details.invitation, currentUserId());
       setJoined(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const message = e instanceof Error ? e.message : String(e);
+      if (/different email|email does not match|invited email|cannot be used with/i.test(message)) {
+        await clearPendingInvitation();
+        await signOut();
+        Alert.alert('Invitation unavailable', WRONG_EMAIL_MESSAGE);
+        router.replace('/welcome');
+        return;
+      }
+      setError(message);
     } finally {
       setJoining(false);
     }
@@ -86,13 +108,19 @@ export default function AcceptInviteScreen() {
     );
   }
 
+  if (!details && (!auth.currentUser || !auth.currentUser.emailVerified)) {
+    return <Frame hero={<IconHero name="mail-unread-outline" />} title={auth.currentUser ? "Verify your email to continue" : "Sign in to open this invitation"}
+      subtitle="Only the account with the verified invited email can view or accept this invitation."
+      button={{ label: auth.currentUser ? "I've verified my email" : "Sign in", onPress: () => { if (auth.currentUser) { void refreshEmailVerification().then(() => setAuthRevision(n => n + 1)); } else router.push('/sign-in'); } }}
+      secondary={auth.currentUser ? { label: "Resend verification email", onPress: () => { void resendVerificationEmail().catch(e => setError(String(e))); } } : undefined} error={error} />;
+  }
   if (!details) {
     return (
       <Frame
         hero={<IconHero name="mail-unread-outline" />}
         title="We couldn’t find this invite"
         subtitle={error ?? 'The link may be wrong, or the invite was removed.'}
-        button={{ label: 'Go home', onPress: () => goHome() }}
+        button={{ label: 'Return to welcome', onPress: () => { void (async () => { await clearPendingInvitation(); await signOut(); router.replace('/welcome'); })(); } }}
       />
     );
   }
@@ -134,7 +162,7 @@ export default function AcceptInviteScreen() {
       <Frame
         hero={<PetHero pet={pet} />}
         title={details.state === 'signIn' ? 'Sign in to accept your invitation' : 'Verify your email first'}
-        subtitle={details.state === 'signIn' ? `Sign in or create an account using ${invitation.toEmailAddress}. You'll return here after signing in.` : `Check ${invitation.toEmailAddress} for your Firebase verification email. Then tap I've verified my email.`}
+        subtitle={details.state === 'signIn' ? 'Sign in or create an account using the email address that received this invitation.' : 'Verify your account email using the message from Firebase, then return here.'}
         button={{ label: details.state === 'signIn' ? 'Sign in' : 'Resend verification email', onPress: () => {
           if (details.state === 'signIn') router.push('/sign-in');
           else void refreshEmailVerification().then(() => setAuthRevision(n => n + 1)).catch(e => setError(String(e)));
@@ -148,8 +176,8 @@ export default function AcceptInviteScreen() {
       <Frame
         hero={<PetHero pet={pet} />}
         title="This invite is for someone else"
-        subtitle={`It was sent to ${invitation.toEmailAddress}, and you’re signed in as ${user?.email}.`}
-        button={{ label: 'Go home', onPress: () => goHome() }}
+        subtitle={WRONG_EMAIL_MESSAGE}
+        button={{ label: 'Return to welcome', onPress: () => { void (async () => { await clearPendingInvitation(); await signOut(); router.replace('/welcome'); })(); } }}
       />
     );
   }

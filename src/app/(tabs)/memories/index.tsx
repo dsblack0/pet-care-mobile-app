@@ -94,7 +94,7 @@ export default function MemoriesScreen() {
                   year: 'numeric',
                 })}
               />
-              <View style={[styles.card, styles.yearAgo]}>
+              <Pressable onPress={() => router.push({ pathname: "/memories/[memoryId]", params: { memoryId: page.yearAgo!.memoryId } })} style={[styles.card, styles.yearAgo]}>
                 <MemoryPhoto memory={page.yearAgo} style={styles.yearAgoPhoto} tag="1 year ago" />
                 {!!page.yearAgo.description && (
                   <Text style={styles.quote}>“{page.yearAgo.description}”</Text>
@@ -103,7 +103,7 @@ export default function MemoriesScreen() {
                   {ACTIVITY_TAG[page.yearAgo.activityType] ?? page.yearAgo.activityType} · Added by{' '}
                   {page.usersById[page.yearAgo.createdBy.id]?.name ?? 'someone'}
                 </Text>
-              </View>
+              </Pressable>
             </View>
           )}
 
@@ -148,7 +148,7 @@ export default function MemoriesScreen() {
             {gallery.length === 0 && <Text style={styles.meta}>No memories yet.</Text>}
             <View style={styles.grid}>
               {gallery.map((m) => (
-                <View key={m.memoryId} style={styles.gridItem}>
+                <Pressable key={m.memoryId} style={styles.gridItem} accessibilityRole="button" onPress={() => router.push({ pathname: "/memories/[memoryId]", params: { memoryId: m.memoryId } })}>
                   <MemoryPhoto
                     memory={m}
                     style={styles.gridPhoto}
@@ -161,7 +161,7 @@ export default function MemoriesScreen() {
                     {ACTIVITY_TAG[m.activityType] ?? m.activityType} · {names(m)} ·{' '}
                     {formatRelativeDay(toDate(m.occurredAt))}
                   </Text>
-                </View>
+                </Pressable>
               ))}
             </View>
           </View>

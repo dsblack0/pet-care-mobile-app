@@ -15,18 +15,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { SectionHeader } from '@/components/log/SectionHeader';
 import { currentUserId } from '@/lib/auth';
+import * as Clipboard from 'expo-clipboard';
 import { colors, fonts } from '@/constants/theme';
 import { daysLeft } from '@/lib/format';
 import { usePets } from '@/hooks/usePets';
 import { fetchPendingInvites, resendInvite, sendInvite } from '@/lib/inviteData';
 import { dataVersionStore, selectedPetStore } from '@/lib/store';
 import type { Invitation } from '@/types/firestore';
+import { invitationLink } from '../../../../modelViews/invitationController';
 
 export default function InviteScreen() {
   const [pending, setPending] = useState<Invitation[]>([]);
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [latestCode, setLatestCode] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [resent, setResent] = useState<string[]>([]);
 
@@ -55,6 +58,7 @@ export default function InviteScreen() {
     setSending(false);
     if (result.ok) {
       setSentTo(email.trim());
+      setLatestCode(result.token);
       setEmail('');
     } else {
       setError(result.error);
@@ -112,6 +116,11 @@ export default function InviteScreen() {
               </Text>
             )}
 
+            {latestCode && <View style={{ gap: 8 }}>
+              <Text selectable style={styles.linkText}>Invitation code: {latestCode}</Text>
+              <Pressable accessibilityRole="button" onPress={() => void Clipboard.setStringAsync(latestCode)} style={styles.copyButton}><Ionicons name="copy-outline" size={18} color={colors.primary} /><Text style={styles.linkText}>Copy code</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => void Clipboard.setStringAsync(invitationLink(latestCode))} style={styles.copyButton}><Ionicons name="link-outline" size={18} color={colors.primary} /><Text style={styles.linkText}>Copy invite link</Text></Pressable>
+            </View>}
             <Pressable
               style={[styles.button, (!email.trim() || sending) && styles.buttonDisabled]}
               onPress={send}
@@ -175,6 +184,8 @@ export default function InviteScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
+  copyButton: { flexDirection: 'row', gap: 8, alignItems: 'center', padding: 12 },
+  linkText: { color: colors.primary, fontFamily: fonts.subheading },
   flex: { flex: 1 },
   content: { padding: 20, paddingTop: 12, gap: 28, paddingBottom: 40 },
   form: { gap: 8 },

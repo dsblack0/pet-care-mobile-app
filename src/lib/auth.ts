@@ -11,7 +11,7 @@ import {
   signOut as firebaseSignOut,
   type Auth,
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { Platform } from 'react-native';
 
 import { DEMO_USER_ID } from '@/constants/session';
@@ -41,22 +41,78 @@ export const auth = makeAuth();
 export type SessionStatus = 'loading' | 'signedOut' | 'onboarding' | 'ready';
 export const sessionStore = createStore<SessionStatus>('loading');
 
-onAuthStateChanged(auth, (user) => {
+// Auth state is restored asynchronously. Check existing memberships using the original
+// auto-generated userPets document IDs; never infer membership from document IDs.
+let onboardingInProgress = false;
+let demoMode = false;
+let authRevision = 0;
+onAuthStateChanged(auth, async user => {
+  const revision = ++authRevision;
   if (!user) {
-    // The dev-only demo mode has no Firebase user.
-    if (sessionStore.get() !== 'ready') sessionStore.set('signedOut');
+    if (__DEV__ && demoMode) return;
+    selectedPetStore.set(null);
+    sessionStore.set('signedOut');
     return;
   }
-  if (sessionStore.get() !== 'onboarding') sessionStore.set('ready');
+  if (onboardingInProgress) {
+    sessionStore.set('onboarding');
+    return;
+  }
+  sessionStore.set('loading');
+  try {
+    await restoreExistingPetOrOnboarding(user.uid, revision);
+  } catch (error) {
+    if (revision !== authRevision) return;
+    console.warn('Unable to load family memberships:', error);
+    // A failed lookup is not evidence that this is a new account.
+    sessionStore.set('ready');
+  }
 });
 
-/** The signed-in user's id, or the dummy-data user in demo mode. */
+/** Load memberships by user reference, never by userPets document ID.
+ * Select the first pet alphabetically, matching fetchPetsForUser(). */
+async function restoreExistingPetOrOnboarding(uid: string, revision: number) {
+  const memberships = await getDocs(query(
+    collection(db, 'userPets'),
+    where('userId', '==', doc(db, 'users', uid)),
+  ));
+  if (revision !== authRevision || auth.currentUser?.uid !== uid) return;
+  if (memberships.empty) {
+    selectedPetStore.set(null);
+    sessionStore.set('onboarding');
+    return;
+  }
+  const petIds = [...new Set(memberships.docs.map(m => m.data().petId?.id).filter((id): id is string => typeof id === 'string'))];
+  const pets = await Promise.all(petIds.map(async id => {
+    const snapshot = await getDoc(doc(db, 'pets', id));
+    return snapshot.exists() ? { id, name: String(snapshot.data().name ?? '') } : null;
+  }));
+  if (revision !== authRevision || auth.currentUser?.uid !== uid) return;
+  const first = pets.filter((pet): pet is { id: string; name: string } => pet !== null)
+    .sort((a, b) => a.name.localeCompare(b.name))[0];
+  selectedPetStore.set(first?.id ?? null);
+  sessionStore.set('ready');
+}
+
+/** Development-only legacy demo: browse the seeded Firestore user without authentication. */
+export function enterDemoMode() {
+  if (!__DEV__) return;
+  demoMode = true;
+  selectedPetStore.set(null);
+  sessionStore.set('ready');
+}
+
+/** Require a real authenticated identity for Firestore operations. */
 export function currentUserId(): string {
-  return auth.currentUser?.uid ?? DEMO_USER_ID;
+  const uid = auth.currentUser?.uid;
+  if (!uid && __DEV__ && demoMode) return DEMO_USER_ID;
+  if (!uid) throw new Error('Please sign in first.');
+  return uid;
 }
 
 /** Create the Auth account and its users document, then start onboarding. */
 export async function createAccount(name: string, email: string, password: string) {
+  onboardingInProgress = true;
   sessionStore.set('onboarding');
   try {
     const { user } = await createUserWithEmailAndPassword(auth, email.trim(), password);
@@ -66,25 +122,29 @@ export async function createAccount(name: string, email: string, password: strin
     );
     await sendEmailVerification(user);
   } catch (e) {
-    sessionStore.set('signedOut');
+    sessionStore.set(auth.currentUser ? 'onboarding' : 'signedOut');
     throw e;
+  } finally {
+    onboardingInProgress = false;
   }
 }
 
 export async function signIn(email: string, password: string) {
-  await signInWithEmailAndPassword(auth, email.trim(), password);
+  demoMode = false;
+  const { user } = await signInWithEmailAndPassword(auth, email.trim(), password);
+  // Resolve the destination before returning so an existing account never sees onboarding.
+  const revision = ++authRevision;
+  sessionStore.set('loading');
+  await restoreExistingPetOrOnboarding(user.uid, revision);
 }
 
 export async function signOut() {
+  demoMode = false;
   selectedPetStore.set(null);
   sessionStore.set('signedOut');
   await firebaseSignOut(auth);
 }
 
-/** Dev only: browse the Firestore dummy data as Alex without signing in. */
-export function enterDemoMode() {
-  sessionStore.set('ready');
-}
 
 /** Readable text for Firebase Auth error codes. */
 export function authErrorMessage(e: unknown): string {

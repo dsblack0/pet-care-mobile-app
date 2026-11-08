@@ -28,7 +28,7 @@ export default function ChallengePreferencesScreen() {
 
   const [family, setFamily] = useState<User[]>([]);
   const [activityTypes, setActivityTypes] = useState<string[]>([]);
-  const [userIds, setUserIds] = useState<string[]>([]);
+  const [participantsByActivity, setParticipantsByActivity] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +43,11 @@ export default function ChallengePreferencesScreen() {
         setFamily(page.family);
         setActivityTypes(page.saved?.activityTypes ?? []);
         // Until preferences are saved, everyone in the family takes part.
-        setUserIds(page.saved?.userIds ?? page.family.map((u) => u.userId));
+        setParticipantsByActivity(Object.fromEntries(
+          (page.saved?.activityTypes ?? CHALLENGE_ACTIVITIES).map((activity) => [
+            activity, page.saved?.participantsByActivity?.[activity] ?? page.saved?.userIds ?? page.family.map((u) => u.userId),
+          ]),
+        ));
         setError(null);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
@@ -56,14 +60,15 @@ export default function ChallengePreferencesScreen() {
     };
   }, [petId]);
 
-  const canSave = !!petId && activityTypes.length > 0 && userIds.length > 0 && !saving;
+  const canSave = !!petId && activityTypes.length > 0 && activityTypes.every((a) => (participantsByActivity[a] ?? []).length > 0) && !saving;
 
   const save = async () => {
     if (!petId || !canSave) return;
     setSaving(true);
     setError(null);
     try {
-      await saveChallengePreferences(petId, userIds, activityTypes);
+      const chosen = Object.fromEntries(activityTypes.map((a) => [a, participantsByActivity[a] ?? []]));
+      await saveChallengePreferences(petId, [...new Set(Object.values(chosen).flat())], activityTypes, chosen);
       router.back();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -95,19 +100,28 @@ export default function ChallengePreferencesScreen() {
             <ActivityChoiceGrid
               options={CHALLENGE_ACTIVITIES}
               selected={activityTypes}
-              onToggle={(type) => setActivityTypes((cur) => toggle(cur, type))}
+              onToggle={(type) => {
+                setActivityTypes((cur) => toggle(cur, type));
+                setParticipantsByActivity((cur) => ({
+                  ...cur, [type]: cur[type] ?? family.map((u) => u.userId),
+                }));
+              }}
             />
           </View>
 
-          <View>
-            <SectionHeader title="Who takes part?" hint="Select all that apply" />
-            <ParticipantsCard
-              family={family}
-              currentUserId={currentUserId()}
-              selected={userIds}
-              onToggle={(id) => setUserIds((cur) => toggle(cur, id))}
-            />
-          </View>
+          {activityTypes.map((activity) => (
+            <View key={activity}>
+              <SectionHeader title={`Who takes part in ${activity.toLowerCase()} challenges?`} hint="Select at least one" />
+              <ParticipantsCard
+                family={family}
+                currentUserId={currentUserId()}
+                selected={participantsByActivity[activity] ?? []}
+                onToggle={(id) => setParticipantsByActivity((cur) => ({
+                  ...cur, [activity]: toggle(cur[activity] ?? [], id),
+                }))}
+              />
+            </View>
+          ))}
 
           <View style={styles.footer}>
             {error && <Text style={styles.error}>{error}</Text>}

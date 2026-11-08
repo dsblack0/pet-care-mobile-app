@@ -15,7 +15,7 @@ export const CHALLENGE_ACTIVITIES = ['Feed', 'Walk', 'Train', 'Play', 'Groom', '
 export type PreferencesPage = {
   family: User[];
   /** null until preferences have been saved for this pet. */
-  saved: { activityTypes: string[]; userIds: string[] } | null;
+  saved: { activityTypes: string[]; userIds: string[]; participantsByActivity: Record<string, string[]> } | null;
 };
 
 async function findPreferenceDoc(petId: string) {
@@ -32,6 +32,11 @@ export async function fetchChallengePreferences(petId: string): Promise<Preferen
       ? {
           activityTypes: data.activityTypes ?? [],
           userIds: (data.userIds ?? []).map((r: { id: string }) => r.id),
+          participantsByActivity: Object.fromEntries(
+            Object.entries(data.participantsByActivity ?? {}).map(([activity, ids]) => [
+              activity, (ids as Array<string | { id: string }>).map((id) => typeof id === 'string' ? id : id.id),
+            ]),
+          ),
         }
       : null,
   };
@@ -42,14 +47,19 @@ export async function saveChallengePreferences(
   petId: string,
   userIds: string[],
   activityTypes: string[],
+  participantsByActivity?: Record<string, string[]>,
 ): Promise<void> {
   const existing = await findPreferenceDoc(petId);
+  const byActivity = participantsByActivity ?? Object.fromEntries(activityTypes.map((a) => [a, userIds]));
   if (existing) {
-    await updateDoc(existing.ref, { userIds: userIds.map(userRef), activityTypes });
+    await updateDoc(existing.ref, { userIds: userIds.map(userRef), activityTypes, participantsByActivity: byActivity });
   } else {
-    await saveChallengePreference(
+    const created = await saveChallengePreference(
       createChallengePreference(petRef(petId), userIds.map(userRef), activityTypes),
     );
+    // The existing service creates the document; locate it to add the per-area choices.
+    const savedDoc = await findPreferenceDoc(petId);
+    if (savedDoc) await updateDoc(savedDoc.ref, { participantsByActivity: byActivity });
   }
   dataVersionStore.set(dataVersionStore.get() + 1);
 }
