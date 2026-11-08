@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -9,9 +9,10 @@ import {
 } from '@/components/onboarding/OnboardingShell';
 import { TextField } from '@/components/onboarding/TextField';
 import { authErrorMessage, signIn } from '@/lib/auth';
-import { pendingInvitation } from '@/lib/pendingInvite';
+import { clearPendingInvitation, pendingInvitation } from '@/lib/pendingInvite';
 
 export default function SignInScreen() {
+  const { invitationId } = useLocalSearchParams<{ invitationId?: string }>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -26,8 +27,10 @@ export default function SignInScreen() {
     setBusy(true);
     setError(null);
     try {
-      await signIn(email, password);
-      const token = await pendingInvitation();
+      // A normal sign-in must not reopen a stale invitation from a previous session.
+      const token = invitationId || undefined;
+      if (!token) await clearPendingInvitation();
+      await signIn(email, password, { invitationFlow: !!token });
       if (token) router.replace({ pathname: '/invite/[invitationId]', params: { invitationId: token } });
     } catch (e) {
       setError(authErrorMessage(e));
@@ -44,7 +47,7 @@ export default function SignInScreen() {
       busy={busy}
       error={error}
       footer={
-        <FooterLink label="New here? Create an account" onPress={() => router.replace('/create-account')} />
+        <FooterLink label="New here? Create an account" onPress={() => router.replace(invitationId ? { pathname: '/create-account', params: { invitationId } } : '/create-account')} />
       }
     >
       <View style={[onboardingStyles.card, onboardingStyles.form]}>

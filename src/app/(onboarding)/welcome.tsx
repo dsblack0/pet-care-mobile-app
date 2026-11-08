@@ -28,11 +28,11 @@ export default function WelcomeScreen() {
           </View>
         </View>
       }
-      buttonLabel="Get started"
-      onPress={() => router.push('/create-account')}
+      buttonLabel="Sign in"
+      onPress={() => router.push('/sign-in')}
       footer={
         <>
-          <FooterLink label="I already have an account" onPress={() => router.push('/sign-in')} />
+          <FooterLink label="Create a new account" onPress={() => router.push('/create-account')} />
           <FooterLink label="Have an invitation code?" onPress={() => router.push('/invite-code')} />
           {__DEV__ && <FooterLink label="Browse demo data (dev only)" onPress={enterDemoMode} />}
         </>

@@ -129,13 +129,15 @@ export async function createAccount(name: string, email: string, password: strin
   }
 }
 
-export async function signIn(email: string, password: string) {
+export async function signIn(email: string, password: string, options?: { invitationFlow?: boolean }) {
   demoMode = false;
   const { user } = await signInWithEmailAndPassword(auth, email.trim(), password);
   // Resolve the destination before returning so an existing account never sees onboarding.
   const revision = ++authRevision;
   sessionStore.set('loading');
   await restoreExistingPetOrOnboarding(user.uid, revision);
+  // Keep invitation-origin sign-in on the invite screen until the family join is completed.
+  if (options?.invitationFlow && revision === authRevision) sessionStore.set('onboarding');
 }
 
 export async function signOut() {

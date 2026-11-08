@@ -9,7 +9,7 @@ import { AvatarStack } from '@/components/challenges/AvatarStack';
 import { getFaceSpec } from '@/components/pet/faceSpecs';
 import { PetAvatar } from '@/components/pet/PetAvatar';
 import { PetFace } from '@/components/pet/PetFace';
-import { currentUserId, auth, resendVerificationEmail, refreshEmailVerification } from '@/lib/auth';
+import { currentUserId, auth, resendVerificationEmail, refreshEmailVerification, sessionStore } from '@/lib/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { rememberInvitation, clearPendingInvitation } from '@/lib/pendingInvite';
 import { signOut } from '@/lib/auth';
@@ -74,7 +74,11 @@ export default function AcceptInviteScreen() {
   }, [invitationId, authRevision]);
 
   const goHome = (petId?: string) => {
-    if (petId) selectedPetStore.set(petId);
+    if (petId) {
+      selectedPetStore.set(petId);
+      sessionStore.set('ready');
+      void clearPendingInvitation();
+    }
     router.replace(petId ? '/' : '/welcome');
   };
 
@@ -111,8 +115,8 @@ export default function AcceptInviteScreen() {
   if (!details && (!auth.currentUser || !auth.currentUser.emailVerified)) {
     return <Frame hero={<IconHero name="mail-unread-outline" />} title={auth.currentUser ? "Verify your email to continue" : "Sign in to open this invitation"}
       subtitle="Only the account with the verified invited email can view or accept this invitation."
-      button={{ label: auth.currentUser ? "I've verified my email" : "Sign in", onPress: () => { if (auth.currentUser) { void refreshEmailVerification().then(() => setAuthRevision(n => n + 1)); } else router.push('/sign-in'); } }}
-      secondary={auth.currentUser ? { label: "Resend verification email", onPress: () => { void resendVerificationEmail().catch(e => setError(String(e))); } } : undefined} error={error} />;
+      button={{ label: auth.currentUser ? "I've verified my email" : "Sign in", onPress: () => { if (auth.currentUser) { void refreshEmailVerification().then(() => setAuthRevision(n => n + 1)); } else router.push({ pathname: '/sign-in', params: { invitationId } }); } }}
+      secondary={auth.currentUser ? { label: "Resend verification email", onPress: () => { void resendVerificationEmail().catch(e => setError(String(e))); } } : { label: "Create a new account", onPress: () => router.push({ pathname: "/create-account", params: { invitationId } }) }} error={error} />;
   }
   if (!details) {
     return (
@@ -164,7 +168,7 @@ export default function AcceptInviteScreen() {
         title={details.state === 'signIn' ? 'Sign in to accept your invitation' : 'Verify your email first'}
         subtitle={details.state === 'signIn' ? 'Sign in or create an account using the email address that received this invitation.' : 'Verify your account email using the message from Firebase, then return here.'}
         button={{ label: details.state === 'signIn' ? 'Sign in' : 'Resend verification email', onPress: () => {
-          if (details.state === 'signIn') router.push('/sign-in');
+          if (details.state === 'signIn') router.push({ pathname: '/sign-in', params: { invitationId } });
           else void refreshEmailVerification().then(() => setAuthRevision(n => n + 1)).catch(e => setError(String(e)));
         } }}
       />

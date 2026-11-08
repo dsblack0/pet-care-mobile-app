@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -12,6 +12,7 @@ import { authErrorMessage, createAccount } from '@/lib/auth';
 import { pendingInvitation } from '@/lib/pendingInvite';
 
 export default function CreateAccountScreen() {
+  const { invitationId } = useLocalSearchParams<{ invitationId?: string }>();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,7 +28,7 @@ export default function CreateAccountScreen() {
     setError(null);
     try {
       await createAccount(name, email, password);
-      const token = await pendingInvitation();
+      const token = invitationId || await pendingInvitation();
       if (token) router.replace({ pathname: '/invite/[invitationId]', params: { invitationId: token } });
       else router.replace('/pet');
     } catch (e) {
@@ -46,7 +47,7 @@ export default function CreateAccountScreen() {
       busy={busy}
       error={error}
       footer={
-        <FooterLink label="Already have an account? Sign in" onPress={() => router.replace('/sign-in')} />
+        <FooterLink label="Already have an account? Sign in" onPress={() => router.replace(invitationId ? { pathname: '/sign-in', params: { invitationId } } : '/sign-in')} />
       }
     >
       <View style={[onboardingStyles.card, onboardingStyles.form]}>
