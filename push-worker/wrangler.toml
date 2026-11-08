@@ -1,0 +1,6 @@
+name = "pawmily-push"
+main = "worker.js"
+compatibility_date = "2025-10-01"
+
+[vars]
+FIREBASE_PROJECT_ID = "mobileapps-865e7"

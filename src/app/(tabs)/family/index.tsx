@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HomeHeader } from '@/components/home/HomeHeader';
@@ -52,8 +52,10 @@ export default function FamilyScreen() {
 
   const nudge = async (recipientId: string) => {
     if (!pet) return;
-    await sendNudge(pet.petId, currentUserId(), recipientId, pet.name);
-    setNudged((cur) => [...cur, recipientId]);
+    try {
+      await sendNudge(pet.petId, currentUserId(), recipientId, pet.name);
+      setNudged((cur) => [...cur, recipientId]);
+    } catch (e) { Alert.alert('Reminder not sent', e instanceof Error ? e.message : 'Please try again.'); }
   };
 
   // You first, then everyone else.

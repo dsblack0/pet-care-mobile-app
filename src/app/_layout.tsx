@@ -4,7 +4,9 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
 
-import { sessionStore } from '@/lib/auth';
+import { auth, sessionStore } from '@/lib/auth';
+import { registerForPush, unregisterForPush } from '@/lib/push';
+import * as Notifications from 'expo-notifications';
 import { pendingInvitation } from '@/lib/pendingInvite';
 
 void SplashScreen.preventAutoHideAsync();
@@ -41,6 +43,21 @@ export default function RootLayout() {
     })();
     return () => { cancelled = true; };
   }, [ready, session, pathname, router]);
+
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged(user => {
+      if (user) void registerForPush().catch(e => console.warn('Push registration failed', e));
+      else void unregisterForPush();
+    });
+    const listener = Notifications.addNotificationResponseReceivedListener(response => {
+      const petId = response.notification.request.content.data?.petId;
+      if (typeof petId === 'string' && auth.currentUser) router.push('/(tabs)/family');
+    });
+    void Notifications.getLastNotificationResponseAsync().then(response => {
+      if (response && typeof response.notification.request.content.data?.petId === 'string' && auth.currentUser) router.push('/(tabs)/family');
+    }).catch(() => {});
+    return () => { unsub(); listener.remove(); };
+  }, [router]);
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "323164159198",
+    "project_id": "mobileapps-865e7",
+    "storage_bucket": "mobileapps-865e7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:323164159198:android:3e9cfa5adf14f083eb164f",
+        "android_client_info": {
+          "package_name": "com.pawmily.petcare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdZEGTXiomtd7hWPwZi5r2JRbICBSsf-w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

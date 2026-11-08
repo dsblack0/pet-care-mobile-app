@@ -11,7 +11,7 @@ import {
 import { toDate } from '@/lib/homeData';
 import { dataVersionStore } from '@/lib/store';
 import type { CareSchedule, Memory, User } from '@/types/firestore';
-import { remindFamilyMember } from '../../modelViews/notificationController';
+import { sendFamilyReminder } from '@/lib/push';
 
 /** Monday 00:00 of the current week, local time. */
 function startOfWeek(now: Date): Date {
@@ -159,6 +159,5 @@ export async function sendNudge(
   petName: string,
 ) {
   void senderId;
-  void petName;
-  await remindFamilyMember(petId, recipientId);
+  await sendFamilyReminder(petId, recipientId, petName);
 }
