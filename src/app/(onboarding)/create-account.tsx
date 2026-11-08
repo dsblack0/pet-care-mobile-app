@@ -9,7 +9,7 @@ import {
 } from '@/components/onboarding/OnboardingShell';
 import { TextField } from '@/components/onboarding/TextField';
 import { authErrorMessage, createAccount } from '@/lib/auth';
-import { pendingInvitation } from '@/lib/pendingInvite';
+import { pendingInvitation, rememberInvitation } from '@/lib/pendingInvite';
 
 export default function CreateAccountScreen() {
   const { invitationId } = useLocalSearchParams<{ invitationId?: string }>();
@@ -27,8 +27,10 @@ export default function CreateAccountScreen() {
     setBusy(true);
     setError(null);
     try {
-      await createAccount(name, email, password);
+      // Resolve and persist the invite before Firebase changes auth state.
       const token = invitationId || await pendingInvitation();
+      if (token) await rememberInvitation(token);
+      await createAccount(name, email, password);
       if (token) router.replace({ pathname: '/invite/[invitationId]', params: { invitationId: token } });
       else router.replace('/pet');
     } catch (e) {

@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Redirect, Tabs } from 'expo-router';
-import type { ComponentProps } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { colors } from '@/constants/theme';
 import { sessionStore } from '@/lib/auth';
+import { pendingInvitation } from '@/lib/pendingInvite';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -33,10 +34,23 @@ function tabIcon(filled: IconName, outline: IconName) {
   };
 }
 
+function OnboardingRedirect() {
+  const [token, setToken] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let cancelled = false;
+    void pendingInvitation().then(value => { if (!cancelled) setToken(value); });
+    return () => { cancelled = true; };
+  }, []);
+  if (token === undefined) return null;
+  if (token) return <Redirect href={{ pathname: '/invite/[invitationId]', params: { invitationId: token } }} />;
+  return <Redirect href="/pet" />;
+}
+
 export default function TabLayout() {
   const session = sessionStore.useValue();
   if (session === 'loading') return null;
-  if (session !== 'ready') return <Redirect href={session === 'onboarding' ? '/pet' : '/welcome'} />;
+  if (session === 'onboarding') return <OnboardingRedirect />;
+  if (session !== 'ready') return <Redirect href="/welcome" />;
 
   return (
     <Tabs

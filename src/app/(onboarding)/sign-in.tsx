@@ -28,7 +28,7 @@ export default function SignInScreen() {
     setError(null);
     try {
       // A normal sign-in must not reopen a stale invitation from a previous session.
-      const token = invitationId || undefined;
+      const token = invitationId || await pendingInvitation();
       if (!token) await clearPendingInvitation();
       await signIn(email, password, { invitationFlow: !!token });
       if (token) router.replace({ pathname: '/invite/[invitationId]', params: { invitationId: token } });
