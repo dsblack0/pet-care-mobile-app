@@ -40,9 +40,9 @@ export class DocumentReference {
   }
 }
 
-type CollectionRef = { kind: 'collection'; name: string };
-type Where = { field: string; op: '=='; value: unknown };
-type Query = { kind: 'query'; name: string; wheres: Where[] };
+type CollectionRef = { kind: "collection"; name: string };
+type Where = { field: string; op: "=="; value: unknown };
+type Query = { kind: "query"; name: string; wheres: Where[] };
 
 const store = new Map<string, Map<string, Data>>();
 let nextId = 0;
@@ -53,38 +53,60 @@ const table = (name: string) => {
 };
 
 const same = (a: unknown, b: unknown) =>
-  a instanceof DocumentReference && b instanceof DocumentReference ? a.path === b.path : a === b;
+  a instanceof DocumentReference && b instanceof DocumentReference
+    ? a.path === b.path
+    : a === b;
 
 const snapshot = (name: string, id: string) => {
   const data = table(name).get(id);
-  return { id, ref: new DocumentReference(name, id), exists: () => !!data, data: () => data };
+  return {
+    id,
+    ref: new DocumentReference(name, id),
+    exists: () => !!data,
+    data: () => data,
+  };
 };
 
 export const getFirestore = () => ({});
 
-export const collection = (_db: unknown, name: string): CollectionRef => ({
-  kind: 'collection',
-  name,
+/** collection(db, "a") or a nested one, collection(db, "pets", id, "settings"). */
+export const collection = (
+  _db: unknown,
+  ...segments: string[]
+): CollectionRef => ({
+  kind: "collection",
+  name: segments.join("/"),
 });
 
-/** doc(db, name, id) for a known id, or doc(collection(...)) for a new auto id. */
-export function doc(parent: unknown, name?: string, id?: string): DocumentReference {
-  if ((parent as CollectionRef)?.kind === 'collection') {
-    return new DocumentReference((parent as CollectionRef).name, `auto${++nextId}`);
+/**
+ * doc(db, "pets", id) or a nested path like doc(db, "pets", id, "settings", "x") for a known
+ * id, or doc(collection(...)) for a new auto id.
+ */
+export function doc(parent: unknown, ...segments: string[]): DocumentReference {
+  if ((parent as CollectionRef)?.kind === "collection") {
+    return new DocumentReference(
+      (parent as CollectionRef).name,
+      `auto${++nextId}`,
+    );
   }
-  return new DocumentReference(name!, id!);
+  const id = segments.pop()!;
+  return new DocumentReference(segments.join("/"), id);
 }
 
-export const where = (field: string, op: '==', value: unknown): Where => ({ field, op, value });
+export const where = (field: string, op: "==", value: unknown): Where => ({
+  field,
+  op,
+  value,
+});
 
 export const query = (coll: CollectionRef, ...wheres: Where[]): Query => ({
-  kind: 'query',
+  kind: "query",
   name: coll.name,
   wheres,
 });
 
 export async function getDocs(q: Query | CollectionRef) {
-  const wheres = q.kind === 'query' ? q.wheres : [];
+  const wheres = q.kind === "query" ? q.wheres : [];
   const docs = [...table(q.name).entries()]
     .filter(([, data]) => wheres.every((w) => same(data[w.field], w.value)))
     .map(([id]) => snapshot(q.name, id));
@@ -105,7 +127,7 @@ export async function addDoc(coll: CollectionRef, data: Data) {
   return ref;
 }
 
-const INCREMENT = Symbol('increment');
+const INCREMENT = Symbol("increment");
 export const increment = (by: number) => ({ [INCREMENT]: by });
 
 export async function updateDoc(ref: DocumentReference, changes: Data) {
@@ -115,6 +137,22 @@ export async function updateDoc(ref: DocumentReference, changes: Data) {
     const by = (value as Record<symbol, number> | null)?.[INCREMENT];
     current[key] = by === undefined ? value : Number(current[key] ?? 0) + by;
   }
+}
+
+/** Writes are queued and applied together on commit(). */
+export function writeBatch() {
+  const ops: (() => Promise<void>)[] = [];
+  return {
+    set(ref: DocumentReference, data: Data) {
+      ops.push(() => setDoc(ref, data));
+    },
+    update(ref: DocumentReference, changes: Data) {
+      ops.push(() => updateDoc(ref, changes));
+    },
+    async commit() {
+      for (const op of ops) await op();
+    },
+  };
 }
 
 // ---- Test helpers ----
