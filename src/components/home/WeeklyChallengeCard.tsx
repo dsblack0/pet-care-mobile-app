@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 
+import { ChallengeSourceBadge } from "@/components/challenges/ChallengeSourceBadge";
 import { ProgressBar } from "@/components/home/ProgressBar";
 import { colors, fonts } from "@/constants/theme";
 import { toDate } from "@/lib/homeData";
@@ -28,6 +29,7 @@ export function WeeklyChallengeCard({ challenge, usersById }: Props) {
     <View style={styles.outer}>
       <Text style={styles.heading}>Weekly family Challenge</Text>
       <View style={styles.inner}>
+        <ChallengeSourceBadge challenge={challenge} />
         <Text style={styles.title}>{challenge.title}</Text>
         <Text style={styles.meta}>
           {progressLabel} · {left} {left === 1 ? "day" : "days"} left

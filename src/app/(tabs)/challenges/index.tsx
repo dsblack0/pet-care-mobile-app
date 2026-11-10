@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AvatarStack } from "@/components/challenges/AvatarStack";
 import { ChallengeIcon } from "@/components/challenges/ChallengeIcon";
+import { ChallengeSourceBadge } from "@/components/challenges/ChallengeSourceBadge";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { ProgressBar } from "@/components/home/ProgressBar";
 import { SectionHeader } from "@/components/log/SectionHeader";
@@ -325,7 +326,10 @@ function ChallengeCard({
       <View style={styles.challengeTop}>
         <ChallengeIcon challenge={challenge} />
         <View style={styles.flex}>
-          <Text style={styles.kind}>{kind.label.toUpperCase()}</Text>
+          <View style={styles.kindRow}>
+            <Text style={styles.kind}>{kind.label.toUpperCase()}</Text>
+            <ChallengeSourceBadge challenge={challenge} />
+          </View>
           <Text style={styles.challengeTitle}>{challenge.title}</Text>
         </View>
       </View>
@@ -388,6 +392,7 @@ const styles = StyleSheet.create({
   list: { gap: 12 },
   challenge: { gap: 10 },
   challengeTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  kindRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   kind: {
     fontSize: 11,
     fontFamily: fonts.heading,

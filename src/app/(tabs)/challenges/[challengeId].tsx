@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ChallengeIcon } from "@/components/challenges/ChallengeIcon";
+import { ChallengeSourceBadge } from "@/components/challenges/ChallengeSourceBadge";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { ProgressBar } from "@/components/home/ProgressBar";
 import { SectionHeader } from "@/components/log/SectionHeader";
@@ -77,9 +78,12 @@ export default function ChallengeProgressScreen() {
             <View style={styles.summaryTop}>
               <ChallengeIcon challenge={c} />
               <View style={styles.flex}>
-                <Text style={styles.kind}>
-                  {kind.label.toUpperCase()} CHALLENGE
-                </Text>
+                <View style={styles.kindRow}>
+                  <Text style={styles.kind}>
+                    {kind.label.toUpperCase()} CHALLENGE
+                  </Text>
+                  <ChallengeSourceBadge challenge={c} />
+                </View>
                 <Text style={styles.title}>{c.title}</Text>
               </View>
             </View>
@@ -199,6 +203,12 @@ const styles = StyleSheet.create({
   },
   summary: { paddingVertical: 16, gap: 10 },
   summaryTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  kindRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
   kind: {
     fontSize: 11,
     fontFamily: fonts.heading,

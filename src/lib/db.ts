@@ -124,6 +124,7 @@ function toChallenge(id: string, d: DocumentData): Challenge {
     goalType: d.goalType ?? "",
     activityTypes: d.activityTypes ?? [],
     pointReward: num(d.pointReward),
+    generatedBy: d.generatedBy,
   };
 }
 

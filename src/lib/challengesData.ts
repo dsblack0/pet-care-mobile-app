@@ -35,6 +35,13 @@ export function challengeKind(c: Challenge): { label: string; unit: string } {
   return { label: "Challenge", unit: "done" };
 }
 
+/** Whether the on-device AI wrote this challenge or it came from the free preset list. */
+export function challengeSource(c: Challenge): "ai" | "preset" | null {
+  if (c.generatedBy === "apple-foundation-models") return "ai";
+  if (c.generatedBy === "free-preset") return "preset";
+  return null;
+}
+
 export type ChallengesPage = {
   active: Challenge[];
   completed: Challenge[];
