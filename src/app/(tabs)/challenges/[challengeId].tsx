@@ -11,6 +11,7 @@ import { ProgressBar } from "@/components/home/ProgressBar";
 import { SectionHeader } from "@/components/log/SectionHeader";
 import { currentUserId } from "@/lib/auth";
 import { colors, fonts } from "@/constants/theme";
+import { useIsPetOwner } from "@/hooks/useIsPetOwner";
 import { usePets } from "@/hooks/usePets";
 import {
   cancelChallenge,
@@ -36,6 +37,7 @@ export default function ChallengeProgressScreen() {
   const dataVersion = dataVersionStore.useValue();
   const [detail, setDetail] = useState<ChallengeDetail | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const isOwner = useIsPetOwner(detail?.challenge.petId.id);
 
   useEffect(() => {
     if (!challengeId) return;
@@ -120,6 +122,26 @@ export default function ChallengeProgressScreen() {
               ))}
             </View>
           </View>
+
+          {active && isOwner && (
+            <Pressable
+              style={styles.edit}
+              onPress={() =>
+                router.push({
+                  pathname: "/challenges/edit",
+                  params: { challengeId: c.challengeId },
+                })
+              }
+              accessibilityRole="button"
+            >
+              <Ionicons
+                name="create-outline"
+                size={20}
+                color={colors.primary}
+              />
+              <Text style={styles.editText}>Edit challenge</Text>
+            </Pressable>
+          )}
 
           {active && (
             <Pressable
@@ -251,5 +273,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  edit: {
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  editText: { fontSize: 16, fontFamily: fonts.heading, color: colors.primary },
   cancelText: { fontSize: 16, fontFamily: fonts.heading, color: "#B5442A" },
 });

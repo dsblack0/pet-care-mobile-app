@@ -10,6 +10,8 @@ type Props = {
   currentUserId: string;
   selected: string[];
   onToggle: (userId: string) => void;
+  /** Replaces the Together Bonus hint, for forms outside Log Activity. */
+  hint?: string;
 };
 
 export function ParticipantsCard({
@@ -17,6 +19,7 @@ export function ParticipantsCard({
   currentUserId,
   selected,
   onToggle,
+  hint: customHint,
 }: Props) {
   // Current user first, labelled "You".
   const people = [...family].sort((a, b) =>
@@ -28,11 +31,12 @@ export function ParticipantsCard({
     .map(nameOf);
 
   const hint =
-    selectedNames.length > 1
+    customHint ??
+    (selectedNames.length > 1
       ? `${selectedNames.join(" + ")} selected · eligible for Together Bonus`
       : selectedNames.length === 1
         ? `${selectedNames[0]} selected · add someone for a Together Bonus`
-        : "Pick at least one person";
+        : "Pick at least one person");
 
   return (
     <View style={styles.card}>

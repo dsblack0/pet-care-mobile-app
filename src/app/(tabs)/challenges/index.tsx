@@ -21,6 +21,7 @@ import { ProgressBar } from "@/components/home/ProgressBar";
 import { SectionHeader } from "@/components/log/SectionHeader";
 import { PetAvatar } from "@/components/pet/PetAvatar";
 import { colors, fonts } from "@/constants/theme";
+import { useIsPetOwner } from "@/hooks/useIsPetOwner";
 import { usePets } from "@/hooks/usePets";
 import {
   challengeKind,
@@ -50,6 +51,7 @@ export default function ChallengesScreen() {
   const [xp, setXp] = useState<RewardsPage | null>(null);
   const [tab, setTab] = useState<Tab>("active");
   const petId = pet?.petId;
+  const isOwner = useIsPetOwner(petId);
 
   useEffect(() => {
     if (!petId) return;
@@ -190,6 +192,17 @@ export default function ChallengesScreen() {
                   ? "Generating challenges…"
                   : "Regenerate AI challenges"}
               </Text>
+            </Pressable>
+          )}
+
+          {isOwner && (
+            <Pressable
+              style={styles.outlineButton}
+              onPress={() => router.push("/challenges/edit")}
+              accessibilityRole="button"
+            >
+              <Ionicons name="add" size={20} color={colors.primary} />
+              <Text style={styles.outlineButtonText}>Add a challenge</Text>
             </Pressable>
           )}
 
@@ -389,6 +402,22 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   buttonText: { fontSize: 16, fontFamily: fonts.heading, color: "#FFFFFF" },
+  outlineButton: {
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  outlineButtonText: {
+    fontSize: 16,
+    fontFamily: fonts.heading,
+    color: colors.primary,
+  },
   list: { gap: 12 },
   challenge: { gap: 10 },
   challengeTop: { flexDirection: "row", alignItems: "center", gap: 12 },

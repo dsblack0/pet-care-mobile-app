@@ -1,28 +1,56 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import type { ComponentProps } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, fonts } from "@/constants/theme";
 import { challengeSource } from "@/lib/challengesData";
 import type { Challenge } from "@/types/firestore";
 
-/** Small pill marking an AI-generated or preset challenge. Shows nothing for older challenges. */
+const LOOK: Record<
+  "ai" | "preset" | "custom",
+  {
+    label: string;
+    a11y: string;
+    icon: ComponentProps<typeof Ionicons>["name"];
+    bg: string;
+    fg: string;
+  }
+> = {
+  ai: {
+    label: "AI-made",
+    a11y: "AI-generated challenge",
+    icon: "sparkles",
+    bg: colors.primarySoft,
+    fg: colors.primary,
+  },
+  preset: {
+    label: "Preset",
+    a11y: "Preset challenge",
+    icon: "list",
+    bg: colors.track,
+    fg: colors.textMuted,
+  },
+  custom: {
+    label: "Custom",
+    a11y: "Challenge made by the pet's owner",
+    icon: "create",
+    bg: colors.openBg,
+    fg: colors.openText,
+  },
+};
+
+/** Small pill showing who made a challenge: the AI, the preset list or the owner. */
 export function ChallengeSourceBadge({ challenge }: { challenge: Challenge }) {
   const source = challengeSource(challenge);
   if (!source) return null;
-  const ai = source === "ai";
+  const look = LOOK[source];
   return (
     <View
-      style={[styles.pill, ai ? styles.aiPill : styles.presetPill]}
-      accessibilityLabel={ai ? "AI-generated challenge" : "Preset challenge"}
+      style={[styles.pill, { backgroundColor: look.bg }]}
+      accessibilityLabel={look.a11y}
     >
-      <Ionicons
-        name={ai ? "sparkles" : "list"}
-        size={11}
-        color={ai ? colors.primary : colors.textMuted}
-      />
-      <Text style={[styles.text, ai ? styles.aiText : styles.presetText]}>
-        {ai ? "AI-made" : "Preset"}
-      </Text>
+      <Ionicons name={look.icon} size={11} color={look.fg} />
+      <Text style={[styles.text, { color: look.fg }]}>{look.label}</Text>
     </View>
   );
 }
@@ -37,9 +65,5 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 10,
   },
-  aiPill: { backgroundColor: colors.primarySoft },
-  presetPill: { backgroundColor: colors.track },
   text: { fontSize: 11, fontFamily: fonts.heading, letterSpacing: 0.3 },
-  aiText: { color: colors.primary },
-  presetText: { color: colors.textMuted },
 });
