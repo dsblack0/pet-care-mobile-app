@@ -25,7 +25,7 @@ import { Platform } from "react-native";
 import { DEMO_USER_ID } from "@/constants/session";
 import { createStore, selectedPetStore } from "@/lib/store";
 import { app, db } from "../../firebaseConfig";
-import { createUser } from "../../models/users";
+import { createUser, type UserGender } from "../../models/users";
 
 // Keep the sign-in across app restarts on iOS/Android.
 function makeAuth(): Auth {
@@ -138,6 +138,9 @@ export async function createAccount(
   name: string,
   email: string,
   password: string,
+  age: number | null = null,
+  gender: UserGender | null = null,
+  profilePhotoPath: string | null = null,
 ) {
   onboardingInProgress = true;
   sessionStore.set("onboarding");
@@ -149,11 +152,18 @@ export async function createAccount(
     );
     await setDoc(
       doc(db, "users", user.uid),
-      createUser(name.trim(), email.trim().toLowerCase(), {
-        email: true,
-        text: false,
-        push: true,
-      }),
+      createUser(
+        name.trim(),
+        email.trim().toLowerCase(),
+        {
+          email: true,
+          text: false,
+          push: true,
+        },
+        profilePhotoPath,
+        age,
+        gender,
+      ),
     );
     await sendEmailVerification(user);
   } catch (e) {

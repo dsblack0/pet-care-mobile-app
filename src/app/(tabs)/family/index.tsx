@@ -233,6 +233,18 @@ function MemberRow({
         <Text style={styles.memberName}>
           {isYou ? "You" : member.user.name}
         </Text>
+        {(member.user.age !== null || member.user.gender) && (
+          <Text style={styles.memberSub}>
+            {[
+              member.user.age === null ? null : `Age ${member.user.age}`,
+              member.user.gender
+                ? `${member.user.gender[0].toUpperCase()}${member.user.gender.slice(1)}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </Text>
+        )}
         <Text style={styles.memberLine}>
           {member.usuallyHelpsWith
             ? `Usually helps with: ${member.usuallyHelpsWith}`
