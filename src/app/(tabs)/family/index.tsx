@@ -160,7 +160,7 @@ export default function FamilyScreen() {
                 <View style={styles.statDivider} />
                 <Stat value={week.feeds} one="feed" many="feeds" />
                 <View style={styles.statDivider} />
-                <Stat value={week.photoMemories} one="memory" many="memories" />
+                <Stat value={week.memories} one="memory" many="memories" />
               </View>
             </View>
           </View>

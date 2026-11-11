@@ -8,7 +8,6 @@ import {
 } from "@/components/onboarding/OnboardingShell";
 import { PetFace } from "@/components/pet/PetFace";
 import { colors, fonts } from "@/constants/theme";
-import { enterDemoMode } from "@/lib/auth";
 
 const POINTS = [
   {
@@ -55,12 +54,6 @@ export default function WelcomeScreen() {
             label="Have an invitation code?"
             onPress={() => router.push("/invite-code")}
           />
-          {__DEV__ && (
-            <FooterLink
-              label="Browse demo data (dev only)"
-              onPress={enterDemoMode}
-            />
-          )}
         </>
       }
     >
