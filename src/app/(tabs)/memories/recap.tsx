@@ -27,6 +27,7 @@ import {
   type RecapDraft,
 } from "@/lib/memoriesData";
 import { selectedPetStore } from "@/lib/store";
+import { memoryActivityName } from "@/lib/memoryActivityName";
 import type { Pet } from "@/types/firestore";
 
 export default function RecapScreen() {
@@ -277,8 +278,9 @@ function StoryCard({
       {hero && (
         <MemoryPhoto
           memory={hero}
+          pet={pet}
           style={styles.hero}
-          tag={ACTIVITY_TAG[hero.activityType] ?? hero.activityType}
+          tag={memoryActivityName(hero)}
         />
       )}
       {small.length > 0 && (
@@ -287,8 +289,9 @@ function StoryCard({
             <MemoryPhoto
               key={m.memoryId}
               memory={m}
+              pet={pet}
               style={styles.small}
-              tag={ACTIVITY_TAG[m.activityType] ?? m.activityType}
+              tag={memoryActivityName(m)}
             />
           ))}
         </View>

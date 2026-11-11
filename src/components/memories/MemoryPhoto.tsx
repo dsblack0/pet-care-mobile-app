@@ -8,6 +8,8 @@ import {
   type ViewStyle,
 } from "react-native";
 
+import { PetMemoryFace } from "@/components/memories/PetMemoryFace";
+import type { Pet } from "@/types/firestore";
 import { ACTIVITY_ICONS } from "@/components/home/ActivityIcon";
 import { activityTint, fonts } from "@/constants/theme";
 import { useImageUrl } from "@/lib/storage";
@@ -26,13 +28,14 @@ export const ACTIVITY_TAG: Record<string, string> = {
 
 type Props = {
   memory: Memory;
+  pet?: Pet | null;
   style?: StyleProp<ViewStyle>;
   /** Small label in the middle of the photo, e.g. "Walk" or "1 year ago". */
   tag?: string | null;
 };
 
 /** The memory's photo from Storage, or a tinted placeholder with its activity icon. */
-export function MemoryPhoto({ memory, style, tag }: Props) {
+export function MemoryPhoto({ memory, pet, style, tag }: Props) {
   const url = useImageUrl(memory.photoPath);
   const tint = activityTint[memory.activityType] ?? activityTint.Other;
 
@@ -40,6 +43,8 @@ export function MemoryPhoto({ memory, style, tag }: Props) {
     <View style={[styles.box, { backgroundColor: tint.bg }, style]}>
       {url ? (
         <Image source={{ uri: url }} style={StyleSheet.absoluteFill} />
+      ) : memory.activityType === "Other" && pet ? (
+        <PetMemoryFace pet={pet} size={96} />
       ) : (
         <Ionicons
           name={ACTIVITY_ICONS[memory.activityType] ?? "image-outline"}

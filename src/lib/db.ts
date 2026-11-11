@@ -95,6 +95,8 @@ function toMemory(s: QueryDocumentSnapshot): Memory {
     description: d.description ?? "",
     location: d.location ?? null,
     activityType: d.activityType ?? "Other",
+    customActivityName: d.customActivityName ?? undefined,
+    locationLabel: d.locationLabel ?? undefined,
     participants: d.participants ?? [],
     careScheduleId: d.careScheduleId ?? null,
     durationMinutes:

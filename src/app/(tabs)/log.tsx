@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -30,16 +31,17 @@ import { selectedPetStore } from "@/lib/store";
 import type { User } from "@/types/firestore";
 
 /** Activities where "How long?" applies. */
-const TIMED = ["Walk", "Play", "Train"];
+
 
 export default function LogScreen() {
   const [family, setFamily] = useState<User[]>([]);
   const [pointsTable, setPointsTable] = useState<Record<string, number>>({});
 
   const [activity, setActivity] = useState<string | null>(null);
-  const [duration, setDuration] = useState<number | "custom">(30);
+  const [duration, setDuration] = useState<number | "custom" | null>(null);
+  const [otherActivity, setOtherActivity] = useState("");
   const [customMinutes, setCustomMinutes] = useState("");
-  const [minutesAgo, setMinutesAgo] = useState(0);
+  const [occurredAt, setOccurredAt] = useState(() => new Date());
   const [participants, setParticipants] = useState<string[]>([]);
   const [place, setPlace] = useState<Place | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -68,9 +70,10 @@ export default function LogScreen() {
 
   const resetForm = () => {
     setActivity(null);
-    setDuration(30);
+    setDuration(null);
+    setOtherActivity("");
     setCustomMinutes("");
-    setMinutesAgo(0);
+    setOccurredAt(new Date());
     setParticipants(auth.currentUser ? [auth.currentUser.uid] : []);
     setPlace(null);
     setPhotoUri(null);
@@ -91,12 +94,7 @@ export default function LogScreen() {
         : [...cur, userId],
     );
 
-  const timed = activity !== null && TIMED.includes(activity);
-  const minutes = !timed
-    ? undefined
-    : duration === "custom"
-      ? Number(customMinutes)
-      : duration;
+  const minutes = duration === "custom" ? Number(customMinutes) : (duration ?? undefined);
   const basePoints = activity ? (pointsTable[activity] ?? 0) : 0;
   const bonusPoints =
     participants.length > 1 ? (pointsTable.TogetherBonus ?? 0) : 0;
@@ -104,7 +102,9 @@ export default function LogScreen() {
     !!pet &&
     !!activity &&
     participants.length > 0 &&
-    (!timed || !!minutes) &&
+    (activity !== "Other" || !!otherActivity.trim()) &&
+    (duration !== "custom" || (Number.isFinite(minutes) && !!minutes && minutes > 0)) &&
+    occurredAt.getTime() <= Date.now() &&
     !submitting;
 
   const submit = async () => {
@@ -116,7 +116,8 @@ export default function LogScreen() {
         petId: pet.petId,
         createdBy: currentUserId(),
         activityType: activity,
-        occurredAt: new Date(Date.now() - minutesAgo * 60_000),
+        occurredAt,
+        customActivityName: activity === "Other" ? otherActivity.trim() : undefined,
         participants,
         durationMinutes: minutes,
         description: caption.trim() || undefined,
@@ -142,7 +143,7 @@ export default function LogScreen() {
     )
     .map((u) => u.name);
   const summary = [
-    activityLabel ?? "Pick an activity",
+    activity === "Other" ? (otherActivity.trim() || "Other") : (activityLabel ?? "Pick an activity"),
     minutes ? `${minutes} min` : null,
     others.length ? `with ${others.join(" + ")}` : null,
   ]
@@ -173,25 +174,27 @@ export default function LogScreen() {
               hint="Required"
             />
             <ActivityGrid selected={activity} onSelect={setActivity} />
+            {activity === "Other" && (
+              <TextInput style={styles.otherInput} value={otherActivity} onChangeText={setOtherActivity} placeholder="What activity did you do?" placeholderTextColor={colors.textMuted} maxLength={100} accessibilityLabel="Custom activity name" />
+            )}
           </View>
 
           <View>
             <SectionHeader
               title="How long?"
-              hint="For walks, play & training"
+              hint="Optional"
             />
             <DurationPicker
               choice={duration}
               customMinutes={customMinutes}
-              disabled={!timed}
               onChoose={setDuration}
               onCustomChange={setCustomMinutes}
             />
           </View>
 
           <View>
-            <SectionHeader title="When did it happen?" hint="Default: Now" />
-            <WhenField minutesAgo={minutesAgo} onChange={setMinutesAgo} />
+            <SectionHeader title="When did it happen?" hint="Choose date & time" />
+            <WhenField value={occurredAt} onChange={setOccurredAt} />
           </View>
 
           <View>
@@ -270,4 +273,5 @@ const styles = StyleSheet.create({
   summary: { fontSize: 14, color: colors.textMuted, textAlign: "center" },
   summaryPoints: { fontFamily: fonts.subheading, color: colors.primary },
   error: { color: colors.openText, textAlign: "center" },
+  otherInput: { marginTop: 12, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1.5, borderRadius: 16, paddingHorizontal: 16, minHeight: 52, color: colors.text, fontSize: 16 },
 });
