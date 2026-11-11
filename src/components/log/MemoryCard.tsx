@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
+import { useState } from "react";
 import {
   Image,
   Pressable,
@@ -26,6 +27,8 @@ export function MemoryCard({
   onPhotoChange,
   onCaptionChange,
 }: Props) {
+  const [captionHeight, setCaptionHeight] = useState(48);
+
   const pickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
@@ -60,14 +63,22 @@ export function MemoryCard({
           <Text style={styles.addPhotoText}>Add a photo</Text>
         </Pressable>
       )}
-      <TextInput
-        value={caption}
-        onChangeText={onCaptionChange}
-        placeholder={`Short caption, e.g. “${petName} found every puddle.”`}
-        placeholderTextColor={colors.textMuted}
-        multiline
-        style={styles.caption}
-      />
+      <View style={styles.captionField}>
+        <Text style={styles.captionLabel}>Caption</Text>
+        <TextInput
+          value={caption}
+          onChangeText={onCaptionChange}
+          placeholder={`Description`}
+          placeholderTextColor={colors.textMuted}
+          accessibilityLabel="Caption"
+          multiline
+          scrollEnabled={false}
+          onContentSizeChange={(event) =>
+            setCaptionHeight(Math.max(48, event.nativeEvent.contentSize.height))
+          }
+          style={[styles.caption, { height: captionHeight }]}
+        />
+      </View>
     </View>
   );
 }
@@ -99,6 +110,12 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   photo: { width: "100%", aspectRatio: 4 / 3, borderRadius: 14 },
+  captionField: { gap: 6 },
+  captionLabel: {
+    fontSize: 15,
+    fontFamily: fonts.subheading,
+    color: colors.text,
+  },
   remove: {
     position: "absolute",
     top: 8,
@@ -111,11 +128,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   caption: {
-    minHeight: 56,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 14,
-    backgroundColor: colors.background,
+    borderWidth: 1.5,
+    borderColor: colors.border,
     fontSize: 15,
     color: colors.text,
     textAlignVertical: "top",

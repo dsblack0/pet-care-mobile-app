@@ -168,6 +168,17 @@ export default function LogScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View>
+            <SectionHeader title="Add a memory"  />
+            <MemoryCard
+              petName={pet?.name ?? "your pet"}
+              photoUri={photoUri}
+              caption={caption}
+              onPhotoChange={setPhotoUri}
+              onCaptionChange={setCaption}
+            />
+          </View>
+
+          <View>
             <SectionHeader
               title={`What did ${pet?.name ?? "your pet"} do?`}
               hint="Required"
@@ -190,7 +201,7 @@ export default function LogScreen() {
           </View>
 
           <View>
-            <SectionHeader title="When did it happen?" hint="Default: Now" />
+            <SectionHeader title="When did it happen?"/>
             <WhenField minutesAgo={minutesAgo} onChange={setMinutesAgo} />
           </View>
 
@@ -210,17 +221,6 @@ export default function LogScreen() {
           <View>
             <SectionHeader title="Where were you?" hint="Optional" />
             <LocationCard place={place} onChange={setPlace} />
-          </View>
-
-          <View>
-            <SectionHeader title="Turn it into a memory" hint="Optional" />
-            <MemoryCard
-              petName={pet?.name ?? "your pet"}
-              photoUri={photoUri}
-              caption={caption}
-              onPhotoChange={setPhotoUri}
-              onCaptionChange={setCaption}
-            />
           </View>
 
           <View style={styles.footer}>
