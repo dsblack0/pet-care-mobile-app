@@ -32,12 +32,6 @@ import {
   type ProfileData,
   type ProfilePet,
 } from "@/lib/profileData";
-import {
-  getChallengeSettings,
-  setChallengeSettings,
-  type FamilyPlan,
-} from "@/lib/challengePlans";
-import { createFreePresetChallenges } from "@/lib/weeklyChallenges";
 import { uploadImage, useImageUrl } from "@/lib/storage";
 import { dataVersionStore, selectedPetStore } from "@/lib/store";
 import type { User } from "@/types/firestore";
@@ -59,8 +53,6 @@ const GENDER_LABEL_BY_VALUE: Record<UserGender, GenderLabel> = {
 };
 
 export default function ProfileScreen() {
-  const [familyPlan, setFamilyPlan] = useState<FamilyPlan>("free");
-  const [planSaving, setPlanSaving] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [editing, setEditing] = useState(false);
   const [editedName, setEditedName] = useState("");
@@ -206,28 +198,6 @@ export default function ProfileScreen() {
     (async () => setProfile(await fetchProfile(currentUserId())))();
   }, [dataVersion]);
 
-  useEffect(() => {
-    if (pet?.petId)
-      void getChallengeSettings(pet.petId)
-        .then((s) => setFamilyPlan(s.plan))
-        .catch(console.warn);
-  }, [pet?.petId, dataVersion]);
-  const switchPlan = async (plan: FamilyPlan) => {
-    if (!pet?.petId || planSaving) return;
-    setPlanSaving(true);
-    try {
-      await setChallengeSettings(pet.petId, { plan });
-      setFamilyPlan(plan);
-      if (plan === "free") await createFreePresetChallenges(pet.petId);
-    } catch (e) {
-      Alert.alert(
-        "Could not update plan",
-        e instanceof Error ? e.message : String(e),
-      );
-    } finally {
-      setPlanSaving(false);
-    }
-  };
   const role = profile?.isOrganizer ? "Family organizer" : "Family member";
   const petCount = profile?.pets.length ?? 0;
   const petCountLabel = `${petCount} pet${petCount === 1 ? "" : "s"}`;
@@ -450,44 +420,6 @@ export default function ProfileScreen() {
                   })}
                 last
               />
-            </View>
-          </View>
-
-          <View>
-            <SectionHeader
-              title="Family challenge plan"
-              hint={pet?.name ?? ""}
-            />
-            <View style={styles.card}>
-              <Text style={styles.muted}>
-                Demo plan selection — no payment is collected. The plan is
-                shared by everyone caring for this pet.
-              </Text>
-              {(["free", "plus"] as const).map((plan) => (
-                <Pressable
-                  key={plan}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: familyPlan === plan }}
-                  disabled={planSaving || !pet}
-                  onPress={() => void switchPlan(plan)}
-                  style={styles.preferenceRow}
-                >
-                  <Ionicons
-                    name={
-                      familyPlan === plan
-                        ? "radio-button-on"
-                        : "radio-button-off"
-                    }
-                    size={24}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.settingsText}>
-                    {plan === "free"
-                      ? "Free — preset challenges"
-                      : "Pawmily Plus — Apple AI challenges"}
-                  </Text>
-                </Pressable>
-              ))}
             </View>
           </View>
 

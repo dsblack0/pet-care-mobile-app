@@ -17,6 +17,11 @@ import { ProgressBar } from "@/components/home/ProgressBar";
 import { SectionHeader } from "@/components/log/SectionHeader";
 import { currentUserId } from "@/lib/auth";
 import { colors, fonts } from "@/constants/theme";
+import {
+  getChallengeSettings,
+  setChallengeSettings,
+  type FamilyPlan,
+} from "@/lib/challengePlans";
 import type { CareStatus } from "@/lib/care";
 import {
   fetchFamilyWeek,
@@ -28,6 +33,7 @@ import {
 import { initial } from "@/lib/format";
 import { usePets } from "@/hooks/usePets";
 import { dataVersionStore, selectedPetStore } from "@/lib/store";
+import { createFreePresetChallenges } from "@/lib/weeklyChallenges";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -42,6 +48,8 @@ const MEMBER_COLORS = [
 export default function FamilyScreen() {
   const [week, setWeek] = useState<FamilyWeek | null>(null);
   const [nudged, setNudged] = useState<string[]>([]);
+  const [familyPlan, setFamilyPlan] = useState<FamilyPlan>("free");
+  const [planSaving, setPlanSaving] = useState(false);
 
   const dataVersion = dataVersionStore.useValue();
   const { pets, pet } = usePets();
@@ -50,6 +58,13 @@ export default function FamilyScreen() {
   useEffect(() => {
     if (!petId) return;
     (async () => setWeek(await fetchFamilyWeek(petId)))();
+  }, [petId, dataVersion]);
+
+  useEffect(() => {
+    if (!petId) return;
+    void getChallengeSettings(petId)
+      .then((settings) => setFamilyPlan(settings.plan))
+      .catch(console.warn);
   }, [petId, dataVersion]);
 
   const selectPet = (id: string) => {
@@ -67,6 +82,23 @@ export default function FamilyScreen() {
         "Reminder not sent",
         e instanceof Error ? e.message : "Please try again.",
       );
+    }
+  };
+
+  const switchPlan = async (plan: FamilyPlan) => {
+    if (!petId || planSaving) return;
+    setPlanSaving(true);
+    try {
+      await setChallengeSettings(petId, { plan });
+      setFamilyPlan(plan);
+      if (plan === "free") await createFreePresetChallenges(petId);
+    } catch (e) {
+      Alert.alert(
+        "Could not update plan",
+        e instanceof Error ? e.message : String(e),
+      );
+    } finally {
+      setPlanSaving(false);
     }
   };
 
@@ -128,7 +160,7 @@ export default function FamilyScreen() {
                 <View style={styles.statDivider} />
                 <Stat value={week.feeds} one="feed" many="feeds" />
                 <View style={styles.statDivider} />
-                <Stat value={week.photoMemories} one="memory" many="memories" />
+                <Stat value={week.memories} one="memory" many="memories" />
               </View>
             </View>
           </View>
@@ -179,6 +211,37 @@ export default function FamilyScreen() {
                   row={row}
                   last={i === week.coverage.length - 1}
                 />
+              ))}
+            </View>
+          </View>
+
+          <View>
+            <SectionHeader title="Family challenge plan" hint={pet.name} />
+            <View style={[styles.card, styles.planCard]}>
+              {(["free", "plus"] as const).map((plan) => (
+                <Pressable
+                  key={plan}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: familyPlan === plan }}
+                  disabled={planSaving}
+                  onPress={() => void switchPlan(plan)}
+                  style={styles.preferenceRow}
+                >
+                  <Ionicons
+                    name={
+                      familyPlan === plan
+                        ? "radio-button-on"
+                        : "radio-button-off"
+                    }
+                    size={24}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.planLabel}>
+                    {plan === "free"
+                      ? "Free — preset challenges"
+                      : "Pawmily Plus — Apple AI challenges"}
+                  </Text>
+                </Pressable>
               ))}
             </View>
           </View>
@@ -326,6 +389,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   muted: { fontSize: 14, lineHeight: 20, color: colors.textMuted },
+  planCard: { paddingTop: 14, paddingBottom: 10 },
+  preferenceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 8,
+  },
+  planLabel: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.text,
+  },
   sectionRow: { flexDirection: "row", justifyContent: "space-between" },
   link: {
     fontSize: 14,
