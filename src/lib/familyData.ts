@@ -59,7 +59,7 @@ export type FamilyWeek = {
   goalProgress: number | null;
   walks: number;
   feeds: number;
-  memories: number;
+  photoMemories: number;
   members: MemberWeek[];
   coverage: CoverageRow[];
 };
@@ -128,7 +128,7 @@ export async function fetchFamilyWeek(petId: string): Promise<FamilyWeek> {
     goalProgress: goal > 0 ? progress / goal : null,
     walks: week.filter((m) => m.activityType === "Walk").length,
     feeds: week.filter((m) => m.activityType === "Feed").length,
-    memories: week.length,
+    photoMemories: week.filter((m) => !!m.photoPath).length,
     members,
     coverage,
   };

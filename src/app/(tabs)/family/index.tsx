@@ -160,7 +160,7 @@ export default function FamilyScreen() {
                 <View style={styles.statDivider} />
                 <Stat value={week.feeds} one="feed" many="feeds" />
                 <View style={styles.statDivider} />
-                <Stat value={week.memories} one="memory" many="memories" />
+                <Stat value={week.photoMemories} one="memory" many="memories" />
               </View>
             </View>
           </View>
@@ -180,36 +180,6 @@ export default function FamilyScreen() {
                   nudged={nudged.includes(m.user.userId)}
                   onNudge={() => nudge(m.user.userId)}
                   last={i === members.length - 1}
-                />
-              ))}
-            </View>
-          </View>
-
-          <Pressable
-            style={styles.button}
-            onPress={() => router.push("/family/invite")}
-            accessibilityRole="button"
-          >
-            <Ionicons name="add" size={22} color="#FFFFFF" />
-            <Text style={styles.buttonText}>Invite to Family</Text>
-          </Pressable>
-
-          <View>
-            <View style={styles.sectionRow}>
-              <SectionHeader title="Today's coverage" />
-              <Text style={styles.link}>Collaborative view</Text>
-            </View>
-            <View style={styles.card}>
-              {week.coverage.length === 0 && (
-                <Text style={[styles.muted, styles.empty]}>
-                  No care scheduled today.
-                </Text>
-              )}
-              {week.coverage.map((row, i) => (
-                <CoverageItem
-                  key={row.schedule.careScheduleId}
-                  row={row}
-                  last={i === week.coverage.length - 1}
                 />
               ))}
             </View>
@@ -242,6 +212,36 @@ export default function FamilyScreen() {
                       : "Pawmily Plus — Apple AI challenges"}
                   </Text>
                 </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <Pressable
+            style={styles.button}
+            onPress={() => router.push("/family/invite")}
+            accessibilityRole="button"
+          >
+            <Ionicons name="add" size={22} color="#FFFFFF" />
+            <Text style={styles.buttonText}>Invite to Family</Text>
+          </Pressable>
+
+          <View>
+            <View style={styles.sectionRow}>
+              <SectionHeader title="Today's Coverage" />
+              <Text style={styles.link}>Collaborative view</Text>
+            </View>
+            <View style={styles.card}>
+              {week.coverage.length === 0 && (
+                <Text style={[styles.muted, styles.empty]}>
+                  No care scheduled today.
+                </Text>
+              )}
+              {week.coverage.map((row, i) => (
+                <CoverageItem
+                  key={row.schedule.careScheduleId}
+                  row={row}
+                  last={i === week.coverage.length - 1}
+                />
               ))}
             </View>
           </View>
