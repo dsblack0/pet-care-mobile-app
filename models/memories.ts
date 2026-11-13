@@ -10,6 +10,8 @@ export interface Memory {
   description: string;
   location: GeoPoint | null;
   activityType: string;
+  customActivityName?: string;
+  locationLabel?: string;
   participants: DocumentReference[];
   careScheduleId: DocumentReference | null;
   durationMinutes: number | null;

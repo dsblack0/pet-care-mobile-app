@@ -1,11 +1,13 @@
 import type { DocumentReference } from "firebase/firestore";
 import { Link } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { usePets } from "@/hooks/usePets";
 import { MemoryThumb } from "@/components/home/MemoryThumb";
 import { colors, fonts } from "@/constants/theme";
 import { toDate } from "@/lib/homeData";
-import { activityLabel, formatRelativeDay } from "@/lib/format";
+import { formatRelativeDay } from "@/lib/format";
+import { memoryActivityName } from "@/lib/memoryActivityName";
 import type { Memory, User } from "@/types/firestore";
 
 const MAX_ITEMS = 3;
@@ -34,6 +36,7 @@ type Props = {
 };
 
 export function RecentCard({ petName, memories, usersById }: Props) {
+  const { pets } = usePets();
   const items = memories.slice(0, MAX_ITEMS);
 
   return (
@@ -49,18 +52,18 @@ export function RecentCard({ petName, memories, usersById }: Props) {
           <Text style={styles.empty}>No memories yet.</Text>
         )}
         {items.map((m, i) => (
-          <View key={m.memoryId} style={[styles.row, i > 0 && styles.divider]}>
-            <MemoryThumb memory={m} />
+          <Link key={m.memoryId} href={{ pathname: "/memories/[memoryId]", params: { memoryId: m.memoryId } }} asChild><Pressable style={StyleSheet.flatten([styles.row, i > 0 ? styles.divider : undefined])}>
+            <MemoryThumb memory={m} pet={pets.find((p) => p.petId === m.petId.id)} />
             <View style={styles.rowText}>
               <Text style={styles.title}>
-                {m.description || activityLabel(m.activityType)}
+                {memoryActivityName(m)}
               </Text>
               <Text style={styles.subtitle}>{subtitleFor(m, usersById)}</Text>
             </View>
             <Text style={styles.when}>
               {formatRelativeDay(toDate(m.occurredAt))}
             </Text>
-          </View>
+          </Pressable></Link>
         ))}
       </View>
     </View>

@@ -1,6 +1,12 @@
 // Data for the Challenges tab, a single challenge's progress, and Rewards / Pet XP.
 // Read from Firestore.
-import { doc, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  Timestamp,
+  updateDoc,
+} from "firebase/firestore";
 
 import {
   getChallenge,
@@ -9,8 +15,13 @@ import {
   getMemoriesForPet,
   getPet,
   getRewards,
+  getUserPetsForPet,
   getUsersById,
+  petRef,
+  userRef,
 } from "@/lib/db";
+import { currentUserId } from "@/lib/auth";
+import { sundayUTC, weekEnd } from "@/lib/weeklyChallenges";
 import { toDate } from "@/lib/homeData";
 import { dataVersionStore } from "@/lib/store";
 import type {
@@ -33,6 +44,16 @@ export function challengeKind(c: Challenge): { label: string; unit: string } {
   if (c.goalType === "daily")
     return { label: "Anyone can contribute", unit: "days logged" };
   return { label: "Challenge", unit: "done" };
+}
+
+/** Whether the on-device AI wrote this challenge or it came from the free preset list. */
+export function challengeSource(
+  c: Challenge,
+): "ai" | "preset" | "custom" | null {
+  if (c.generatedBy === "apple-foundation-models") return "ai";
+  if (c.generatedBy === "free-preset") return "preset";
+  if (c.generatedBy === "manual") return "custom";
+  return null;
 }
 
 export type ChallengesPage = {
@@ -151,4 +172,114 @@ export async function fetchRewards(petId: string): Promise<RewardsPage | null> {
         level: levelForPoints(levels, reward.pointRequirement),
       })),
   };
+}
+
+// ---- Owner-made and owner-edited challenges ----
+
+/** Ways a hand-made challenge can be counted. Same goalType values the generators use. */
+export const MANUAL_GOAL_TYPES = [
+  { value: "unique_activities", label: "Times done", unit: "times" },
+  { value: "daily", label: "Days with a log", unit: "days" },
+  { value: "duration", label: "Minutes", unit: "minutes" },
+  {
+    value: "unique_participants",
+    label: "Everyone joins in",
+    unit: "family members",
+  },
+] as const;
+
+/** Points for a hand-made challenge, the same as a preset one. */
+export const MANUAL_POINT_REWARD = 100;
+
+/** True if this user created the pet's family (their userPets role is "owner"). */
+export async function isPetOwner(petId: string, userId: string) {
+  const links = await getUserPetsForPet(petId);
+  return links.some((l) => l.userId.id === userId && l.role === "owner");
+}
+
+async function requirePetOwner(petId: string) {
+  if (!(await isPetOwner(petId, currentUserId())))
+    throw new Error("Only the pet's owner can add or edit challenges.");
+}
+
+/** The parts of a challenge the owner can change after it starts. */
+export type ChallengeEdits = {
+  title: string;
+  description: string;
+  goal: number;
+  participantIds: string[];
+};
+
+export type NewChallengeInput = ChallengeEdits & {
+  activityType: string;
+  goalType: string;
+};
+
+function checkEdits(edits: ChallengeEdits, progress = 0) {
+  const title = edits.title.trim();
+  if (title.length < 3 || title.length > 100)
+    throw new Error("Give the challenge a title of 3 to 100 characters.");
+  if (!Number.isInteger(edits.goal) || edits.goal < 1 || edits.goal > 999)
+    throw new Error("The goal must be a whole number from 1 to 999.");
+  if (edits.goal <= progress)
+    throw new Error(`The goal must be more than the ${progress} already done.`);
+  if (edits.participantIds.length === 0)
+    throw new Error("Pick at least one person to take part.");
+  return {
+    title,
+    description: edits.description.trim(),
+    goal: edits.goal,
+    participants: edits.participantIds.map(userRef),
+  };
+}
+
+/** Owner only: add a challenge by hand. It runs until the end of this challenge week. */
+export async function createManualChallenge(
+  petId: string,
+  input: NewChallengeInput,
+): Promise<string> {
+  await requirePetOwner(petId);
+  if (!MANUAL_GOAL_TYPES.some((t) => t.value === input.goalType))
+    throw new Error("Choose how the challenge is counted.");
+  if (!input.activityType) throw new Error("Choose what the challenge is for.");
+  const fields = checkEdits(input);
+  const week = sundayUTC(new Date());
+  const ref = await addDoc(collection(db, "challenges"), {
+    petId: petRef(petId),
+    ...fields,
+    completedBy: [],
+    completedAt: null,
+    completionStatus: "in_progress",
+    startDate: Timestamp.now(),
+    endDate: Timestamp.fromDate(weekEnd(week)),
+    progress: 0,
+    goalType: input.goalType,
+    activityTypes: [input.activityType],
+    jointActivity: false,
+    pointReward: MANUAL_POINT_REWARD,
+    generatedBy: "manual",
+    generationWeek: week,
+  });
+  dataVersionStore.set(dataVersionStore.get() + 1);
+  return ref.id;
+}
+
+/**
+ * Owner only: change an active challenge's title, description, goal and who takes part.
+ * The activity, how it's counted and the points stay fixed so progress keeps counting correctly.
+ */
+export async function updateChallenge(
+  challengeId: string,
+  edits: ChallengeEdits,
+): Promise<void> {
+  const challenge = await getChallenge(challengeId);
+  if (!challenge) throw new Error("This challenge no longer exists.");
+  await requirePetOwner(challenge.petId.id);
+  if (challenge.completionStatus !== "in_progress")
+    throw new Error("Only active challenges can be edited.");
+  await updateDoc(
+    doc(db, "challenges", challengeId),
+    checkEdits(edits, challenge.progress),
+  );
+  dataVersionStore.set(dataVersionStore.get() + 1);
 }

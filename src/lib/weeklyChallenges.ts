@@ -36,14 +36,14 @@ const categories: Record<string, Category> = {
   Groom: "grooming",
   Medication: "medication",
 };
-function sundayUTC(now: Date) {
+export function sundayUTC(now: Date) {
   const d = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
   );
   d.setUTCDate(d.getUTCDate() - d.getUTCDay());
   return d.toISOString().slice(0, 10);
 }
-function weekEnd(start: string) {
+export function weekEnd(start: string) {
   return new Date(Date.parse(start + "T00:00:00.000Z") + 7 * 86400000 - 1);
 }
 function stateRef(petId: string) {
@@ -154,6 +154,7 @@ export async function regenerateFamilyChallenges(
     const oldCurrent = existing.filter(
       (c) =>
         c.completionStatus === "in_progress" &&
+        c.generatedBy !== "manual" &&
         c.startDate.toDate() <= weekEnd(week),
     );
     for (const c of oldCurrent)
@@ -296,7 +297,9 @@ export async function createFreePresetChallenges(petId: string): Promise<void> {
   );
   const old = await getChallengesForPet(petId);
   const batch = writeBatch(db);
-  for (const c of old.filter((c) => c.completionStatus === "in_progress")) {
+  for (const c of old.filter(
+    (c) => c.completionStatus === "in_progress" && c.generatedBy !== "manual",
+  )) {
     batch.update(doc(db, "challenges", c.challengeId), {
       completionStatus: "cancelled",
     });

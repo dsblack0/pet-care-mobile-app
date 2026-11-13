@@ -32,4 +32,6 @@ export type Challenge = {
   goalType: string;
   activityTypes: string[];
   pointReward: number;
+  /** Who made it: "apple-foundation-models" (AI, Plus plan) or "free-preset". Missing on older challenges. */
+  generatedBy?: string;
 };

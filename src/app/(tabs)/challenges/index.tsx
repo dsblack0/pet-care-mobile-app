@@ -15,11 +15,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AvatarStack } from "@/components/challenges/AvatarStack";
 import { ChallengeIcon } from "@/components/challenges/ChallengeIcon";
+import { ChallengeSourceBadge } from "@/components/challenges/ChallengeSourceBadge";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { ProgressBar } from "@/components/home/ProgressBar";
 import { SectionHeader } from "@/components/log/SectionHeader";
 import { PetAvatar } from "@/components/pet/PetAvatar";
 import { colors, fonts } from "@/constants/theme";
+import { useIsPetOwner } from "@/hooks/useIsPetOwner";
 import { usePets } from "@/hooks/usePets";
 import {
   challengeKind,
@@ -49,6 +51,7 @@ export default function ChallengesScreen() {
   const [xp, setXp] = useState<RewardsPage | null>(null);
   const [tab, setTab] = useState<Tab>("active");
   const petId = pet?.petId;
+  const isOwner = useIsPetOwner(petId);
 
   useEffect(() => {
     if (!petId) return;
@@ -192,6 +195,17 @@ export default function ChallengesScreen() {
             </Pressable>
           )}
 
+          {isOwner && (
+            <Pressable
+              style={styles.outlineButton}
+              onPress={() => router.push("/challenges/edit")}
+              accessibilityRole="button"
+            >
+              <Ionicons name="add" size={20} color={colors.primary} />
+              <Text style={styles.outlineButtonText}>Add a challenge</Text>
+            </Pressable>
+          )}
+
           <View>
             <SectionHeader
               title={
@@ -221,14 +235,6 @@ export default function ChallengesScreen() {
             <View>
               <View style={styles.sectionRow}>
                 <SectionHeader title="Recently completed" />
-                <Pressable
-                  onPress={() => setTab("completed")}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.link}>
-                    View all {page.completed.length}
-                  </Text>
-                </Pressable>
               </View>
               <View style={[styles.card, styles.recent]}>
                 <View style={styles.recentTop}>
@@ -325,7 +331,10 @@ function ChallengeCard({
       <View style={styles.challengeTop}>
         <ChallengeIcon challenge={challenge} />
         <View style={styles.flex}>
-          <Text style={styles.kind}>{kind.label.toUpperCase()}</Text>
+          <View style={styles.kindRow}>
+            <Text style={styles.kind}>{kind.label.toUpperCase()}</Text>
+            <ChallengeSourceBadge challenge={challenge} />
+          </View>
           <Text style={styles.challengeTitle}>{challenge.title}</Text>
         </View>
       </View>
@@ -385,9 +394,26 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   buttonText: { fontSize: 16, fontFamily: fonts.heading, color: "#FFFFFF" },
+  outlineButton: {
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  outlineButtonText: {
+    fontSize: 16,
+    fontFamily: fonts.heading,
+    color: colors.primary,
+  },
   list: { gap: 12 },
   challenge: { gap: 10 },
   challengeTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  kindRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   kind: {
     fontSize: 11,
     fontFamily: fonts.heading,
