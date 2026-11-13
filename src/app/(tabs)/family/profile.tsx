@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -14,14 +15,15 @@ import {
 } from "react-native";
 import { doc, setDoc } from "firebase/firestore";
 import { updateProfile, verifyBeforeUpdateEmail } from "firebase/auth";
-import { auth } from "@/lib/auth";
-import { db } from "../../../../firebaseConfig";
+import { auth, currentUserId, signOut } from "@/lib/auth";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { fieldStyles } from "@/components/form/fieldStyles";
+import { SelectField } from "@/components/form/SelectField";
+import { db } from "../../../../firebaseConfig";
 
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { SectionHeader } from "@/components/log/SectionHeader";
 import { PetAvatar } from "@/components/pet/PetAvatar";
-import { currentUserId, signOut } from "@/lib/auth";
 import { colors, fonts } from "@/constants/theme";
 import { initial } from "@/lib/format";
 import { usePets } from "@/hooks/usePets";
@@ -30,33 +32,74 @@ import {
   type ProfileData,
   type ProfilePet,
 } from "@/lib/profileData";
-import {
-  getChallengeSettings,
-  setChallengeSettings,
-  type FamilyPlan,
-} from "@/lib/challengePlans";
-import { createFreePresetChallenges } from "@/lib/weeklyChallenges";
-import { useImageUrl } from "@/lib/storage";
+import { uploadImage, useImageUrl } from "@/lib/storage";
 import { dataVersionStore, selectedPetStore } from "@/lib/store";
 import type { User } from "@/types/firestore";
+import type { UserGender } from "../../../../models/users";
+
+const GENDER_LABELS = ["Male", "Female", "Other"] as const;
+type GenderLabel = (typeof GENDER_LABELS)[number];
+const PROFILE_GENDERS = [...GENDER_LABELS, "Not provided"] as const;
+type ProfileGenderLabel = (typeof PROFILE_GENDERS)[number];
+const GENDER_VALUES: Record<GenderLabel, UserGender> = {
+  Male: "male",
+  Female: "female",
+  Other: "other",
+};
+const GENDER_LABEL_BY_VALUE: Record<UserGender, GenderLabel> = {
+  male: "Male",
+  female: "Female",
+  other: "Other",
+};
 
 export default function ProfileScreen() {
-  const [familyPlan, setFamilyPlan] = useState<FamilyPlan>("free");
-  const [planSaving, setPlanSaving] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [editing, setEditing] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [editedEmail, setEditedEmail] = useState("");
+  const [editedAge, setEditedAge] = useState("");
+  const [editedGender, setEditedGender] =
+    useState<ProfileGenderLabel | null>(null);
+  const [selectedProfilePhotoUri, setSelectedProfilePhotoUri] = useState<
+    string | null
+  >(null);
   const [editedNotifications, setEditedNotifications] = useState({
     email: false,
     text: false,
     push: false,
   });
   const [saving, setSaving] = useState(false);
+  const profilePhotoUrl = useImageUrl(profile?.user.profilePhotoPath);
+
+  const chooseProfilePhoto = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (!result.canceled)
+        setSelectedProfilePhotoUri(result.assets[0].uri);
+    } catch (error) {
+      Alert.alert(
+        "Could not open photos",
+        error instanceof Error ? error.message : "Please try again.",
+      );
+    }
+  };
+
   const saveProfile = async () => {
     const name = editedName.trim();
     const email = editedEmail.trim().toLowerCase();
     if (!name || !email || saving) return;
+    if (editedAge && !/^\d+$/.test(editedAge)) {
+      Alert.alert(
+        "Check your age",
+        "Enter a whole-number age, or leave it blank.",
+      );
+      return;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       Alert.alert("Check your email", "Enter a valid email address.");
       return;
@@ -71,11 +114,25 @@ export default function ProfileScreen() {
     }
     setSaving(true);
     try {
+      const newProfilePhotoPath = selectedProfilePhotoUri
+        ? await uploadImage(
+            selectedProfilePhotoUri,
+            `users/${account.uid}.jpg`,
+          )
+        : null;
       await setDoc(
         doc(db, "users", account.uid),
         {
           name,
+          age: editedAge === "" ? null : Number(editedAge),
+          gender:
+            editedGender && editedGender !== "Not provided"
+              ? GENDER_VALUES[editedGender]
+              : null,
           notifications: editedNotifications,
+          ...(newProfilePhotoPath
+            ? { profilePhotoPath: newProfilePhotoPath }
+            : {}),
         },
         { merge: true },
       );
@@ -89,7 +146,7 @@ export default function ProfileScreen() {
         } catch {
           Alert.alert(
             "Profile saved",
-            "Your name and notification preferences were saved, but we could not start the email change. Please sign in again and retry.",
+            "Your profile details were saved, but we could not start the email change. Please sign in again and retry.",
           );
         }
       }
@@ -97,10 +154,22 @@ export default function ProfileScreen() {
         old
           ? {
               ...old,
-              user: { ...old.user, name, notifications: editedNotifications },
+              user: {
+                ...old.user,
+                name,
+                age: editedAge === "" ? null : Number(editedAge),
+                gender:
+                  editedGender && editedGender !== "Not provided"
+                    ? GENDER_VALUES[editedGender]
+                    : null,
+                notifications: editedNotifications,
+                profilePhotoPath:
+                  newProfilePhotoPath ?? old.user.profilePhotoPath,
+              },
             }
           : old,
       );
+      setSelectedProfilePhotoUri(null);
       setEditing(false);
       dataVersionStore.set(dataVersionStore.get() + 1);
       if (verificationSent) {
@@ -121,6 +190,7 @@ export default function ProfileScreen() {
     }
   };
   const dataVersion = dataVersionStore.useValue();
+  const photoPreview = selectedProfilePhotoUri ?? profilePhotoUrl;
 
   const { pets, pet } = usePets();
 
@@ -128,28 +198,6 @@ export default function ProfileScreen() {
     (async () => setProfile(await fetchProfile(currentUserId())))();
   }, [dataVersion]);
 
-  useEffect(() => {
-    if (pet?.petId)
-      void getChallengeSettings(pet.petId)
-        .then((s) => setFamilyPlan(s.plan))
-        .catch(console.warn);
-  }, [pet?.petId, dataVersion]);
-  const switchPlan = async (plan: FamilyPlan) => {
-    if (!pet?.petId || planSaving) return;
-    setPlanSaving(true);
-    try {
-      await setChallengeSettings(pet.petId, { plan });
-      setFamilyPlan(plan);
-      if (plan === "free") await createFreePresetChallenges(pet.petId);
-    } catch (e) {
-      Alert.alert(
-        "Could not update plan",
-        e instanceof Error ? e.message : String(e),
-      );
-    } finally {
-      setPlanSaving(false);
-    }
-  };
   const role = profile?.isOrganizer ? "Family organizer" : "Family member";
   const petCount = profile?.pets.length ?? 0;
   const petCountLabel = `${petCount} pet${petCount === 1 ? "" : "s"}`;
@@ -171,70 +219,123 @@ export default function ProfileScreen() {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalPanel}>
-            <Text style={styles.userName}>Edit account information</Text>
-            <TextInput
-              accessibilityLabel="Full name"
-              value={editedName}
-              onChangeText={setEditedName}
-              style={styles.nameInput}
-              autoCapitalize="words"
-            />
-            <Text style={styles.muted}>Email address</Text>
-            <TextInput
-              accessibilityLabel="Email address"
-              value={editedEmail}
-              onChangeText={setEditedEmail}
-              style={styles.nameInput}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoCorrect={false}
-            />
-            <Text style={styles.muted}>Notification preferences</Text>
-            {(["email", "text", "push"] as const).map((key) => (
-              <Pressable
-                key={key}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: editedNotifications[key] }}
-                onPress={() =>
-                  setEditedNotifications((old) => ({
-                    ...old,
-                    [key]: !old[key],
-                  }))
+            <ScrollView
+              style={styles.modalScroll}
+              contentContainerStyle={styles.modalContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={styles.userName}>Edit account information</Text>
+              <View style={styles.photoEditor}>
+                {photoPreview ? (
+                  <Image
+                    source={{ uri: photoPreview }}
+                    style={styles.userPhoto}
+                  />
+                ) : (
+                  <View style={[styles.userPhoto, styles.userInitial]}>
+                    <Text style={styles.userInitialText}>
+                      {initial(editedName)}
+                    </Text>
+                  </View>
+                )}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose profile photo"
+                  disabled={saving}
+                  onPress={() => void chooseProfilePhoto()}
+                  style={styles.photoButton}
+                >
+                  <Ionicons name="camera-outline" size={18} color={colors.primary} />
+                  <Text style={styles.photoButtonText}>
+                    {selectedProfilePhotoUri || profile?.user.profilePhotoPath
+                      ? "Change photo"
+                      : "Add profile photo"}
+                  </Text>
+                </Pressable>
+              </View>
+              <TextInput
+                accessibilityLabel="Full name"
+                value={editedName}
+                onChangeText={setEditedName}
+                style={styles.nameInput}
+                autoCapitalize="words"
+              />
+              <Text style={styles.muted}>Age (optional)</Text>
+              <TextInput
+                accessibilityLabel="Age"
+                value={editedAge}
+                onChangeText={(value) =>
+                  setEditedAge(value.replace(/[^0-9]/g, ""))
                 }
-                style={styles.preferenceRow}
-              >
-                <Ionicons
-                  name={
-                    editedNotifications[key] ? "checkbox" : "square-outline"
+                style={[fieldStyles.box, fieldStyles.inputText]}
+                keyboardType="number-pad"
+                maxLength={3}
+              />
+              <Text style={styles.muted}>Gender (optional)</Text>
+              <SelectField
+                label="Gender (optional)"
+                placeholder="Select gender (optional)"
+                value={editedGender}
+                options={PROFILE_GENDERS}
+                onChange={setEditedGender}
+              />
+              <Text style={styles.muted}>Email address</Text>
+              <TextInput
+                accessibilityLabel="Email address"
+                value={editedEmail}
+                onChangeText={setEditedEmail}
+                style={styles.nameInput}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoCorrect={false}
+              />
+              <Text style={styles.muted}>Notification preferences</Text>
+              {(["email", "text", "push"] as const).map((key) => (
+                <Pressable
+                  key={key}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: editedNotifications[key] }}
+                  onPress={() =>
+                    setEditedNotifications((old) => ({
+                      ...old,
+                      [key]: !old[key],
+                    }))
                   }
-                  size={24}
-                  color={colors.primary}
-                />
-                <Text style={styles.settingsText}>
-                  {key === "email"
-                    ? "Email"
-                    : key === "text"
-                      ? "Text messages"
-                      : "Push notifications"}
+                  style={styles.preferenceRow}
+                >
+                  <Ionicons
+                    name={
+                      editedNotifications[key] ? "checkbox" : "square-outline"
+                    }
+                    size={24}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.settingsText}>
+                    {key === "email"
+                      ? "Email"
+                      : key === "text"
+                        ? "Text messages"
+                        : "Push notifications"}
+                  </Text>
+                </Pressable>
+              ))}
+              <Text style={styles.muted}>
+                Notification delivery is not enabled in this test build. Your
+                choices will be saved for later.
+              </Text>
+              <Pressable
+                onPress={() => void saveProfile()}
+                disabled={saving || !editedName.trim()}
+                style={styles.modalButton}
+              >
+                <Text style={styles.buttonText}>
+                  {saving ? "Saving…" : "Save"}
                 </Text>
               </Pressable>
-            ))}
-            <Text style={styles.muted}>
-              Notification delivery is not enabled in this test build. Your
-              choices will be saved for later.
-            </Text>
-            <Pressable
-              onPress={() => void saveProfile()}
-              disabled={saving || !editedName.trim()}
-              style={styles.modalButton}
-            >
-              <Text style={styles.buttonText}>
-                {saving ? "Saving…" : "Save"}
-              </Text>
-            </Pressable>
-            <Pressable onPress={() => setEditing(false)}>
-              <Text style={styles.link}>Cancel</Text>
-            </Pressable>
+              <Pressable onPress={() => setEditing(false)}>
+                <Text style={styles.link}>Cancel</Text>
+              </Pressable>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -263,8 +364,17 @@ export default function ProfileScreen() {
               <Pressable
                 accessibilityRole="button"
                 onPress={() => {
+                  setSelectedProfilePhotoUri(null);
                   setEditedName(profile.user.name);
                   setEditedEmail(profile.user.email);
+                  setEditedAge(
+                    profile.user.age === null ? "" : String(profile.user.age),
+                  );
+                  setEditedGender(
+                    profile.user.gender
+                      ? GENDER_LABEL_BY_VALUE[profile.user.gender]
+                      : null,
+                  );
                   setEditedNotifications({
                     email: !!profile.user.notifications?.email,
                     text: !!profile.user.notifications?.text,
@@ -278,6 +388,22 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.card}>
               <InfoRow label="Full name" value={profile.user.name} />
+              <InfoRow
+                label="Age"
+                value={
+                  profile.user.age === null
+                    ? "Not provided"
+                    : String(profile.user.age)
+                }
+              />
+              <InfoRow
+                label="Gender"
+                value={
+                  profile.user.gender
+                    ? GENDER_LABEL_BY_VALUE[profile.user.gender]
+                    : "Not provided"
+                }
+              />
               <InfoRow label="Email address" value={profile.user.email} />
               <InfoRow label="Account role" value={role} />
               <InfoRow
@@ -294,44 +420,6 @@ export default function ProfileScreen() {
                   })}
                 last
               />
-            </View>
-          </View>
-
-          <View>
-            <SectionHeader
-              title="Family challenge plan"
-              hint={pet?.name ?? ""}
-            />
-            <View style={styles.card}>
-              <Text style={styles.muted}>
-                Demo plan selection — no payment is collected. The plan is
-                shared by everyone caring for this pet.
-              </Text>
-              {(["free", "plus"] as const).map((plan) => (
-                <Pressable
-                  key={plan}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: familyPlan === plan }}
-                  disabled={planSaving || !pet}
-                  onPress={() => void switchPlan(plan)}
-                  style={styles.preferenceRow}
-                >
-                  <Ionicons
-                    name={
-                      familyPlan === plan
-                        ? "radio-button-on"
-                        : "radio-button-off"
-                    }
-                    size={24}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.settingsText}>
-                    {plan === "free"
-                      ? "Free — preset challenges"
-                      : "Pawmily Plus — Apple AI challenges"}
-                  </Text>
-                </Pressable>
-              ))}
             </View>
           </View>
 
@@ -458,9 +546,33 @@ const styles = StyleSheet.create({
   },
   modalPanel: {
     backgroundColor: colors.surface,
-    padding: 24,
     borderRadius: 20,
+    maxHeight: "90%",
+    overflow: "hidden",
+  },
+  modalScroll: { flexShrink: 1 },
+  modalContent: {
+    padding: 24,
     gap: 16,
+  },
+  photoEditor: {
+    alignItems: "center",
+    gap: 10,
+  },
+  photoButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    minHeight: 40,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: colors.primarySoft,
+  },
+  photoButtonText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontFamily: fonts.subheading,
   },
   nameInput: {
     borderWidth: 1,

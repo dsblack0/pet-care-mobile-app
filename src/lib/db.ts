@@ -24,6 +24,7 @@ import type {
   User,
   UserPet,
 } from "@/types/firestore";
+import type { UserGender } from "../../models/users";
 import { db } from "../../firebaseConfig";
 
 export const petRef = (id: string) => doc(db, "pets", id);
@@ -54,10 +55,24 @@ function toUser(id: string, d: DocumentData): User {
   const n = Array.isArray(d.notifications)
     ? d.notifications[0]
     : d.notifications;
+  const age =
+    typeof d.age === "number" && Number.isInteger(d.age) && d.age >= 0
+      ? d.age
+      : null;
+  const gender: UserGender | null =
+    d.gender === "male" || d.gender === "Male"
+      ? "male"
+      : d.gender === "female" || d.gender === "Female"
+        ? "female"
+        : d.gender === "other" || d.gender === "Other"
+          ? "other"
+          : null;
   return {
     userId: id,
     name: d.name ?? "",
     email: d.email ?? "",
+    age,
+    gender,
     joinedAt: d.joinedAt ?? Timestamp.now(),
     profilePhotoPath: storagePath(d.profilePhotoPath),
     numberOfPets: num(d.numberOfPets),
