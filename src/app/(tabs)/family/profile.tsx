@@ -162,6 +162,7 @@ export default function ProfileScreen() {
         onSelectPet={(id) => selectedPetStore.set(id)}
         eyebrow="User Profile"
         compact
+        showBack
       />
       <Modal
         visible={editing}

@@ -115,6 +115,7 @@ export default function RecapScreen() {
         onSelectPet={(id) => selectedPetStore.set(id)}
         eyebrow="Memory Recap"
         compact
+        showBack
       />
       <KeyboardAvoidingView
         style={styles.flex}

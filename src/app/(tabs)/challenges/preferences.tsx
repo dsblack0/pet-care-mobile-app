@@ -124,6 +124,7 @@ export default function ChallengePreferencesScreen() {
         }}
         eyebrow="Challenge Preferences"
         compact
+        showBack
       />
       {loading ? (
         <ActivityIndicator style={styles.loading} color={colors.primary} />

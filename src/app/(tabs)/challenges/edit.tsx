@@ -138,6 +138,7 @@ export default function EditChallengeScreen() {
         onSelectPet={() => router.back()}
         eyebrow={editing ? "Edit Challenge" : "New Challenge"}
         compact
+        showBack
       />
       {loading ? (
         <ActivityIndicator style={styles.loading} color={colors.primary} />

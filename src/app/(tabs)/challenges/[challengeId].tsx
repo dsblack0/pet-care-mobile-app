@@ -73,6 +73,7 @@ export default function ChallengeProgressScreen() {
         onSelectPet={selectPet}
         eyebrow="Challenge Progress"
         compact
+        showBack
       />
       {c && kind && detail && (
         <ScrollView contentContainerStyle={styles.content}>

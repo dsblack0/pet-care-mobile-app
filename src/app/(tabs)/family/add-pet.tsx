@@ -27,6 +27,7 @@ export default function AddPetScreen() {
         pets={pets}
         onSelectPet={(id) => selectedPetStore.set(id)}
         compact
+        showBack
       />
       <KeyboardAvoidingView
         style={styles.flex}

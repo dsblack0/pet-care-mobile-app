@@ -55,6 +55,7 @@ export default function TutorialsScreen() {
         eyebrow="Help Center"
         title="Tutorials & FAQs"
         compact
+        showBack
       />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.intro}>
