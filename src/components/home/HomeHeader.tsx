@@ -20,7 +20,18 @@ type Props = {
   compact?: boolean;
   /** Shown in place of the pet switcher, e.g. "Tutorials & FAQs". */
   title?: string;
+  /** Show a back button, for screens opened on top of a tab. */
+  showBack?: boolean;
 };
+
+/**
+ * Back to the previous screen. Header icons open some screens in another tab, where there may
+ * be nothing to go back to, so fall back to Home instead of doing nothing.
+ */
+function goBack() {
+  if (router.canGoBack()) router.back();
+  else router.navigate("/");
+}
 
 export function HomeHeader({
   pet,
@@ -30,29 +41,49 @@ export function HomeHeader({
   eyebrow,
   compact,
   title,
+  showBack,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
     <View style={styles.bar}>
-      <Pressable
-        style={styles.petButton}
-        onPress={() => setPickerOpen(true)}
-        disabled={!!title}
-        accessibilityRole="button"
-        accessibilityLabel="Switch pet"
-      >
-        {leading}
-        <View>
-          {eyebrow && <Text style={styles.eyebrow}>{eyebrow}</Text>}
-          <View style={styles.petNameRow}>
-            <Text style={styles.petName}>{title ?? pet?.name ?? ""}</Text>
-            {!title && (
-              <Ionicons name="chevron-down" size={20} color={colors.text} />
+      <View style={styles.leading}>
+        {showBack && (
+          <Pressable
+            style={styles.back}
+            onPress={goBack}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            hitSlop={8}
+          >
+            <Ionicons name="chevron-back" size={26} color={colors.text} />
+          </Pressable>
+        )}
+        <Pressable
+          style={styles.petButton}
+          onPress={() => setPickerOpen(true)}
+          disabled={!!title}
+          accessibilityRole="button"
+          accessibilityLabel="Switch pet"
+        >
+          {leading}
+          <View style={styles.shrink}>
+            {eyebrow && (
+              <Text style={styles.eyebrow} numberOfLines={1}>
+                {eyebrow}
+              </Text>
             )}
+            <View style={styles.petNameRow}>
+              <Text style={[styles.petName, styles.shrink]} numberOfLines={1}>
+                {title ?? pet?.name ?? ""}
+              </Text>
+              {!title && (
+                <Ionicons name="chevron-down" size={20} color={colors.text} />
+              )}
+            </View>
           </View>
-        </View>
-      </Pressable>
+        </Pressable>
+      </View>
 
       <View style={styles.actions}>
         <Pressable
@@ -112,7 +143,26 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: colors.background,
   },
-  petButton: { flexDirection: "row", alignItems: "center", gap: 6 },
+  leading: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  back: {
+    width: 32,
+    height: 40,
+    marginLeft: -8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shrink: { flexShrink: 1 },
+  petButton: {
+    flexShrink: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   petNameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   petName: { fontSize: 24, fontFamily: fonts.heading, color: colors.text },
   eyebrow: { fontSize: 13, color: colors.textMuted, marginBottom: -2 },

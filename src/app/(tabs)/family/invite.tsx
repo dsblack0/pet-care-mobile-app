@@ -82,6 +82,7 @@ export default function InviteScreen() {
         onSelectPet={selectPet}
         eyebrow="Invite Family Member"
         compact
+        showBack
       />
       <KeyboardAvoidingView
         style={styles.flex}

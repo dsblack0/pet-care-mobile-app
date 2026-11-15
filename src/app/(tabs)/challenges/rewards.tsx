@@ -81,6 +81,7 @@ export default function RewardsScreen() {
         onSelectPet={(id) => selectedPetStore.set(id)}
         eyebrow="Pet Points & Rewards"
         compact
+        showBack
       />
       {page && (
         <ScrollView contentContainerStyle={styles.content}>
