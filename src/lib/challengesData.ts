@@ -121,8 +121,14 @@ export async function fetchChallengeDetail(
   return { challenge, rows };
 }
 
-/** Stop an active challenge. It stays in the data with completionStatus "cancelled". */
+/**
+ * Owner only: stop an active challenge. It stays in the data with completionStatus
+ * "cancelled", so it still shows in history.
+ */
 export async function cancelChallenge(challengeId: string): Promise<void> {
+  const challenge = await getChallenge(challengeId);
+  if (!challenge) throw new Error("This challenge no longer exists.");
+  await requirePetOwner(challenge.petId.id);
   await updateDoc(doc(db, "challenges", challengeId), {
     completionStatus: "cancelled",
   });
@@ -199,7 +205,7 @@ export async function isPetOwner(petId: string, userId: string) {
 
 async function requirePetOwner(petId: string) {
   if (!(await isPetOwner(petId, currentUserId())))
-    throw new Error("Only the pet's owner can add or edit challenges.");
+    throw new Error("Only the pet's owner can add, edit or cancel challenges.");
 }
 
 /** The parts of a challenge the owner can change after it starts. */

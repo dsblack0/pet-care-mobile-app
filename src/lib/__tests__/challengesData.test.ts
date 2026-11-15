@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 
 import { currentUserId } from "@/lib/auth";
 import {
+  cancelChallenge,
   challengeSource,
   createManualChallenge,
   fetchChallenges,
@@ -242,5 +243,34 @@ describe("a new week of preset challenges", () => {
     await createFreePresetChallenges(PET);
 
     expect(__get("challenges", id)?.completionStatus).toBe("in_progress");
+  });
+});
+
+describe("cancelChallenge", () => {
+  beforeEach(() => {
+    __seed("challenges", "c1", {
+      petId: petRef,
+      title: "Walk Milo",
+      completionStatus: "in_progress",
+      participants: [],
+      completedBy: [],
+      activityTypes: ["Walk"],
+    });
+  });
+
+  it("lets the owner cancel, keeping the challenge as history", async () => {
+    await cancelChallenge("c1");
+
+    expect(__get("challenges", "c1")).toMatchObject({
+      title: "Walk Milo",
+      completionStatus: "cancelled",
+    });
+  });
+
+  it("refuses family members who are not the owner", async () => {
+    signedInAs("emma");
+
+    await expect(cancelChallenge("c1")).rejects.toThrow("Only the pet's owner");
+    expect(__get("challenges", "c1")?.completionStatus).toBe("in_progress");
   });
 });

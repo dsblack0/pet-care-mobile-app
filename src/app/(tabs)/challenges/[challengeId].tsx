@@ -1,7 +1,14 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ChallengeIcon } from "@/components/challenges/ChallengeIcon";
@@ -56,8 +63,16 @@ export default function ChallengeProgressScreen() {
       setConfirming(true);
       return;
     }
-    await cancelChallenge(detail.challenge.challengeId);
-    router.back();
+    try {
+      await cancelChallenge(detail.challenge.challengeId);
+      router.back();
+    } catch (e) {
+      setConfirming(false);
+      Alert.alert(
+        "Could not cancel",
+        e instanceof Error ? e.message : String(e),
+      );
+    }
   };
 
   const c = detail?.challenge;
@@ -144,7 +159,7 @@ export default function ChallengeProgressScreen() {
             </Pressable>
           )}
 
-          {active && (
+          {active && isOwner && (
             <Pressable
               style={styles.cancel}
               onPress={cancel}
