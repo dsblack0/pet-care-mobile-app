@@ -235,14 +235,6 @@ export default function ChallengesScreen() {
             <View>
               <View style={styles.sectionRow}>
                 <SectionHeader title="Recently completed" />
-                <Pressable
-                  onPress={() => setTab("completed")}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.link}>
-                    View all {page.completed.length}
-                  </Text>
-                </Pressable>
               </View>
               <View style={[styles.card, styles.recent]}>
                 <View style={styles.recentTop}>

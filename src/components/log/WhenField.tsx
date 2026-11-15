@@ -1,111 +1,51 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, fonts } from "@/constants/theme";
-import { formatTime } from "@/lib/format";
 
-/** Minutes before now. 0 = now. */
-const OFFSETS = [0, 15, 30, 60, 120, 180];
+type Props = { value: Date; onChange: (date: Date) => void };
 
-function offsetLabel(minutes: number): string {
-  if (minutes === 0) return "Now";
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = minutes / 60;
-  return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-}
-
-type Props = { minutesAgo: number; onChange: (minutesAgo: number) => void };
-
-export function WhenField({ minutesAgo, onChange }: Props) {
-  const [open, setOpen] = useState(false);
-  // Clock time of the chosen option, captured when it's picked.
-  const [pickedAt, setPickedAt] = useState<Date | null>(null);
-
+export function WhenField({ value, onChange }: Props) {
+  const [mode, setMode] = useState<"date" | "time" | null>(null);
+  const dateLabel = value.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  const timeLabel = value.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const pick = (next: "date" | "time") => {
+    setMode(next);
+  };
+  const changed = (event: DateTimePickerEvent, selected?: Date) => {
+    if (Platform.OS === "android") setMode(null);
+    if (event.type !== "set" || !selected) return;
+    const next = new Date(value);
+    if (mode === "date") next.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
+    else next.setHours(selected.getHours(), selected.getMinutes(), 0, 0);
+    if (next.getTime() <= Date.now()) onChange(next);
+  };
   return (
-    <>
-      <Pressable
-        style={styles.field}
-        onPress={() => setOpen(true)}
-        accessibilityRole="button"
-      >
-        <Text style={styles.value}>
-          {minutesAgo === 0 || !pickedAt
-            ? offsetLabel(minutesAgo)
-            : `${offsetLabel(minutesAgo)} · ${formatTime(pickedAt)}`}
-        </Text>
-        <Ionicons name="time-outline" size={22} color={colors.textMuted} />
-      </Pressable>
-
-      <Modal
-        visible={open}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(false)}
-      >
-        <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>When did it happen?</Text>
-            {OFFSETS.map((m) => (
-              <Pressable
-                key={m}
-                style={styles.option}
-                onPress={() => {
-                  onChange(m);
-                  setPickedAt(new Date(Date.now() - m * 60_000));
-                  setOpen(false);
-                }}
-              >
-                <Text style={styles.optionText}>{offsetLabel(m)}</Text>
-                {m === minutesAgo && (
-                  <Ionicons name="checkmark" size={20} color={colors.primary} />
-                )}
-              </Pressable>
-            ))}
-          </View>
+    <View style={styles.wrapper}>
+      <View style={styles.row}>
+        <Pressable style={styles.field} onPress={() => pick("date")} accessibilityRole="button" accessibilityLabel="Choose activity date">
+          <Ionicons name="calendar-outline" size={21} color={colors.primary} />
+          <View style={styles.text}><Text style={styles.caption}>Date</Text><Text style={styles.value} numberOfLines={1}>{dateLabel}</Text></View>
         </Pressable>
-      </Modal>
-    </>
+        <Pressable style={styles.field} onPress={() => pick("time")} accessibilityRole="button" accessibilityLabel="Choose activity time">
+          <Ionicons name="time-outline" size={21} color={colors.primary} />
+          <View style={styles.text}><Text style={styles.caption}>Time</Text><Text style={styles.value}>{timeLabel}</Text></View>
+        </Pressable>
+      </View>
+      {mode && (
+        <View style={styles.picker}>
+          {Platform.OS === "ios" && <Pressable style={styles.done} onPress={() => setMode(null)}><Text style={styles.doneText}>Done</Text></Pressable>}
+          <DateTimePicker value={value} mode={mode} display={Platform.OS === "ios" ? "spinner" : "default"} maximumDate={mode === "date" ? new Date() : undefined} onChange={changed} />
+        </View>
+      )}
+    </View>
   );
 }
-
 const styles = StyleSheet.create({
-  field: {
-    height: 56,
-    paddingHorizontal: 18,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  value: { fontSize: 16, fontFamily: fonts.subheading, color: colors.text },
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    justifyContent: "center",
-    padding: 32,
-  },
-  sheet: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    paddingVertical: 10,
-  },
-  sheetTitle: {
-    fontSize: 18,
-    fontFamily: fonts.heading,
-    color: colors.text,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  option: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-  },
-  optionText: { fontSize: 17, color: colors.text },
+  wrapper: { gap: 10 }, row: { flexDirection: "row", gap: 10 },
+  field: { flex: 1, minWidth: 0, borderWidth: 1.5, borderColor: colors.border, borderRadius: 16, backgroundColor: colors.surface, padding: 12, flexDirection: "row", alignItems: "center", gap: 8 },
+  text: { flex: 1 }, caption: { fontSize: 12, color: colors.textMuted }, value: { fontSize: 13, fontFamily: fonts.subheading, color: colors.text },
+  picker: { backgroundColor: colors.surface, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: colors.border },
+  done: { alignSelf: "flex-end", padding: 12 }, doneText: { color: colors.primary, fontFamily: fonts.subheading },
 });

@@ -22,10 +22,9 @@ import {
 } from "firebase/firestore";
 import { Platform } from "react-native";
 
-import { DEMO_USER_ID } from "@/constants/session";
 import { createStore, selectedPetStore } from "@/lib/store";
 import { app, db } from "../../firebaseConfig";
-import { createUser } from "../../models/users";
+import { createUser, type UserGender } from "../../models/users";
 
 // Keep the sign-in across app restarts on iOS/Android.
 function makeAuth(): Auth {
@@ -54,12 +53,10 @@ export const sessionStore = createStore<SessionStatus>("loading");
 // Auth state is restored asynchronously. Check existing memberships using the original
 // auto-generated userPets document IDs; never infer membership from document IDs.
 let onboardingInProgress = false;
-let demoMode = false;
 let authRevision = 0;
 onAuthStateChanged(auth, async (user) => {
   const revision = ++authRevision;
   if (!user) {
-    if (__DEV__ && demoMode) return;
     selectedPetStore.set(null);
     sessionStore.set("signedOut");
     return;
@@ -117,18 +114,9 @@ async function restoreExistingPetOrOnboarding(uid: string, revision: number) {
   sessionStore.set("ready");
 }
 
-/** Development-only legacy demo: browse the seeded Firestore user without authentication. */
-export function enterDemoMode() {
-  if (!__DEV__) return;
-  demoMode = true;
-  selectedPetStore.set(null);
-  sessionStore.set("ready");
-}
-
 /** Require a real authenticated identity for Firestore operations. */
 export function currentUserId(): string {
   const uid = auth.currentUser?.uid;
-  if (!uid && __DEV__ && demoMode) return DEMO_USER_ID;
   if (!uid) throw new Error("Please sign in first.");
   return uid;
 }
@@ -138,6 +126,9 @@ export async function createAccount(
   name: string,
   email: string,
   password: string,
+  age: number | null = null,
+  gender: UserGender | null = null,
+  profilePhotoPath: string | null = null,
 ) {
   onboardingInProgress = true;
   sessionStore.set("onboarding");
@@ -149,11 +140,18 @@ export async function createAccount(
     );
     await setDoc(
       doc(db, "users", user.uid),
-      createUser(name.trim(), email.trim().toLowerCase(), {
-        email: true,
-        text: false,
-        push: true,
-      }),
+      createUser(
+        name.trim(),
+        email.trim().toLowerCase(),
+        {
+          email: true,
+          text: false,
+          push: true,
+        },
+        profilePhotoPath,
+        age,
+        gender,
+      ),
     );
     await sendEmailVerification(user);
   } catch (e) {
@@ -169,7 +167,6 @@ export async function signIn(
   password: string,
   options?: { invitationFlow?: boolean },
 ) {
-  demoMode = false;
   const { user } = await signInWithEmailAndPassword(
     auth,
     email.trim(),
@@ -185,7 +182,6 @@ export async function signIn(
 }
 
 export async function signOut() {
-  demoMode = false;
   selectedPetStore.set(null);
   sessionStore.set("signedOut");
   await firebaseSignOut(auth);

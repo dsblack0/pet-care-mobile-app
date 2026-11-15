@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
 
 import { ChallengeSourceBadge } from "@/components/challenges/ChallengeSourceBadge";
 import { ProgressBar } from "@/components/home/ProgressBar";
@@ -28,7 +29,7 @@ export function WeeklyChallengeCard({ challenge, usersById }: Props) {
   return (
     <View style={styles.outer}>
       <Text style={styles.heading}>Weekly family Challenge</Text>
-      <View style={styles.inner}>
+      <Pressable style={styles.inner} onPress={() => router.push({ pathname: "/challenges/[challengeId]", params: { challengeId: challenge.challengeId } })} accessibilityRole="button">
         <ChallengeSourceBadge challenge={challenge} />
         <Text style={styles.title}>{challenge.title}</Text>
         <Text style={styles.meta}>
@@ -47,7 +48,7 @@ export function WeeklyChallengeCard({ challenge, usersById }: Props) {
             {unlockLabel}
           </Text>
         </View>
-      </View>
+      </Pressable>
     </View>
   );
 }

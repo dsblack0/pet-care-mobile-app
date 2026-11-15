@@ -84,6 +84,7 @@ export default function TabLayout() {
         name="challenges"
         options={{
           title: "Challenges",
+          popToTopOnBlur: true,
           tabBarIcon: tabIcon("flag", "flag-outline"),
         }}
       />
@@ -102,6 +103,7 @@ export default function TabLayout() {
         name="memories"
         options={{
           title: "Memories",
+          popToTopOnBlur: true,
           tabBarIcon: tabIcon("images", "images-outline"),
         }}
       />

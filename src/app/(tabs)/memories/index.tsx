@@ -14,6 +14,7 @@ import { toDate } from "@/lib/homeData";
 import { fetchMemoriesPage, type MemoriesPage } from "@/lib/memoriesData";
 import { dataVersionStore, selectedPetStore } from "@/lib/store";
 import type { Memory } from "@/types/firestore";
+import { memoryActivityName } from "@/lib/memoryActivityName";
 
 // Filter chip labels per activity type.
 const CHIP_LABEL: Record<string, string> = {
@@ -124,6 +125,7 @@ export default function MemoriesScreen() {
               >
                 <MemoryPhoto
                   memory={page.yearAgo}
+                  pet={pet}
                   style={styles.yearAgoPhoto}
                   tag="1 year ago"
                 />
@@ -131,8 +133,7 @@ export default function MemoriesScreen() {
                   <Text style={styles.quote}>“{page.yearAgo.description}”</Text>
                 )}
                 <Text style={styles.meta}>
-                  {ACTIVITY_TAG[page.yearAgo.activityType] ??
-                    page.yearAgo.activityType}{" "}
+                  {memoryActivityName(page.yearAgo)}{" "}
                   · Added by{" "}
                   {page.usersById[page.yearAgo.createdBy.id]?.name ?? "someone"}
                 </Text>
@@ -152,8 +153,9 @@ export default function MemoriesScreen() {
                     <MemoryPhoto
                       key={m.memoryId}
                       memory={m}
+                      pet={pet}
                       style={styles.monthPhoto}
-                      tag={ACTIVITY_TAG[m.activityType] ?? m.activityType}
+                      tag={memoryActivityName(m)}
                     />
                   ))}
                 </View>
@@ -202,16 +204,15 @@ export default function MemoriesScreen() {
                 >
                   <MemoryPhoto
                     memory={m}
+                      pet={pet}
                     style={styles.gridPhoto}
-                    tag={ACTIVITY_TAG[m.activityType] ?? m.activityType}
+                    tag={memoryActivityName(m)}
                   />
                   <Text style={styles.gridTitle} numberOfLines={1}>
-                    {m.description ||
-                      ACTIVITY_TAG[m.activityType] ||
-                      m.activityType}
+                    {memoryActivityName(m)}
                   </Text>
                   <Text style={styles.gridMeta} numberOfLines={1}>
-                    {ACTIVITY_TAG[m.activityType] ?? m.activityType} ·{" "}
+                    {memoryActivityName(m)} ·{" "}
                     {names(m)} · {formatRelativeDay(toDate(m.occurredAt))}
                   </Text>
                 </Pressable>

@@ -12,12 +12,18 @@ import {
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, signedInId } from "./core";
 import { db } from "../firebaseConfig";
-import { createUser } from "../models/users";
+import { createUser, type UserGender } from "../models/users";
 
 export function observeAuth(callback: (user: AuthUser | null) => void) {
   return onAuthStateChanged(auth, callback);
 }
-export async function register(email: string, password: string, name: string) {
+export async function register(
+  email: string,
+  password: string,
+  name: string,
+  age: number | null = null,
+  gender: UserGender | null = null,
+) {
   if (!name.trim()) throw new Error("Name is required.");
   const credential = await createUserWithEmailAndPassword(
     auth,
@@ -27,11 +33,18 @@ export async function register(email: string, password: string, name: string) {
   await updateProfile(credential.user, { displayName: name.trim() });
   await setDoc(
     doc(db, "users", credential.user.uid),
-    createUser(name.trim(), credential.user.email!, {
-      email: true,
-      text: false,
-      push: true,
-    }),
+    createUser(
+      name.trim(),
+      credential.user.email!,
+      {
+        email: true,
+        text: false,
+        push: true,
+      },
+      null,
+      age,
+      gender,
+    ),
   );
   await sendEmailVerification(credential.user);
   return credential.user;

@@ -6,10 +6,14 @@ export interface NotificationPreferences {
   push: boolean;
 }
 
+export type UserGender = "male" | "female" | "other";
+
 export interface User {
   userId: string;
   name: string;
   email: string;
+  age: number | null;
+  gender: UserGender | null;
   joinedAt: Timestamp;
   profilePhotoPath: string | null;
   numberOfPets: number;
@@ -23,10 +27,14 @@ export const createUser = (
   email: string,
   notifications: NotificationPreferences,
   profilePhotoPath: string | null = null,
+  age: number | null = null,
+  gender: UserGender | null = null,
 ): NewUser => {
   return {
     name,
     email,
+    age,
+    gender,
     joinedAt: Timestamp.now(),
     profilePhotoPath,
     numberOfPets: 0,

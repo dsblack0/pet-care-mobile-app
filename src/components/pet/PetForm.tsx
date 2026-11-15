@@ -3,7 +3,6 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
 import { useState, type ComponentProps } from "react";
 import {
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
 
 import { DateField } from "@/components/form/DateField";
 import { fieldStyles } from "@/components/form/fieldStyles";
+import { PhotoPickerCard } from "@/components/form/PhotoPickerCard";
 import { SelectField } from "@/components/form/SelectField";
 import { SectionHeader } from "@/components/log/SectionHeader";
 import { colors, fonts } from "@/constants/theme";
@@ -112,29 +112,12 @@ export function PetForm({
 
   return (
     <View style={styles.container}>
-      <View style={[styles.card, styles.photoCard]}>
-        {photoUri ? (
-          <Image source={{ uri: photoUri }} style={styles.photo} />
-        ) : (
-          <View style={[styles.photo, styles.photoEmpty]}>
-            <Ionicons name="image-outline" size={30} color={colors.textMuted} />
-            <Text style={styles.photoEmptyText}>Pet photo</Text>
-          </View>
-        )}
-        <Pressable
-          style={styles.photoButton}
-          onPress={pickPhoto}
-          accessibilityRole="button"
-        >
-          <Ionicons name="add" size={18} color="#FFFFFF" />
-          <Text style={styles.photoButtonText}>
-            {photoUri ? "Change photo" : "Add photo"}
-          </Text>
-        </Pressable>
-        <Text style={styles.hint}>
-          Optional — you can add or change this later
-        </Text>
-      </View>
+      <PhotoPickerCard
+        photoUri={photoUri}
+        emptyLabel="Pet photo"
+        onPress={pickPhoto}
+        disabled={saving}
+      />
 
       <View>
         <SectionHeader title="Pet details" />
@@ -258,29 +241,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
     padding: 16,
-  },
-  photoCard: { alignItems: "center", gap: 12 },
-  photo: { width: 110, height: 110, borderRadius: 24 },
-  photoEmpty: {
-    backgroundColor: colors.peach,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-  },
-  photoEmptyText: { fontSize: 12, color: colors.textMuted },
-  photoButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 16,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.primary,
-  },
-  photoButtonText: {
-    fontSize: 15,
-    fontFamily: fonts.heading,
-    color: "#FFFFFF",
   },
   hint: { fontSize: 13, color: colors.textMuted, textAlign: "center" },
   form: { gap: 16 },
