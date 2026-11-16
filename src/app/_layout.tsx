@@ -100,10 +100,7 @@ export default function RootLayout() {
           name="invite/[invitationId]"
           options={{ headerShown: false }}
         />
-        <Stack.Screen
-          name="invite-code"
-          options={{ title: "Invitation code" }}
-        />
+        <Stack.Screen name="invite-code" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="dark" />
     </>
