@@ -1,4 +1,4 @@
-import { describe, expect, it, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { fetchPointsTable, logActivity, type LogActivityInput } from '@/lib/logData';
 import { uploadImage } from '@/lib/storage';
 import { dataVersionStore } from '@/lib/store';
@@ -33,6 +33,11 @@ function input(overrides: Partial<LogActivityInput> = {}): LogActivityInput {
 }
 
 const savedMemories = () => __all('memories').map(([, data]) => data);
+
+// logActivity adds the log's points to the pet in the same transaction, so the pet must exist.
+beforeEach(() => {
+  __seed('pets', PET, { name: 'Milo', species: 'Dog', totalPoints: 0, level: 1 });
+});
 
 describe('logActivity', () => {
   it('saves a memory with refs, points and no location by default', async () => {

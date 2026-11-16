@@ -155,6 +155,28 @@ export function writeBatch() {
   };
 }
 
+/**
+ * Runs the callback once. Reads see the current data; writes are applied after the callback
+ * finishes, as in Firestore. There is no concurrency here, so there are no retries.
+ */
+export async function runTransaction<T>(
+  _db: unknown,
+  run: (tx: {
+    get: typeof getDoc;
+    set: (ref: DocumentReference, data: Data) => void;
+    update: (ref: DocumentReference, changes: Data) => void;
+  }) => Promise<T>,
+): Promise<T> {
+  const batch = writeBatch();
+  const result = await run({
+    get: getDoc,
+    set: (ref, data) => batch.set(ref, data),
+    update: (ref, changes) => batch.update(ref, changes),
+  });
+  await batch.commit();
+  return result;
+}
+
 // ---- Test helpers ----
 
 export function __reset() {
