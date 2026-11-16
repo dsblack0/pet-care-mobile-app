@@ -34,7 +34,7 @@ export default function OnboardingPaceScreen() {
 
   return (
     <OnboardingShell
-      step={5}
+      step={4}
       title="How many challenges a week?"
       subtitle="Start with what feels doable for your family."
       buttonLabel="Continue"

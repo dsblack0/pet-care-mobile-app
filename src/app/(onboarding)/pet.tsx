@@ -7,8 +7,7 @@ import { createOnboardingPet } from "@/lib/onboardingData";
 export default function OnboardingPetScreen() {
   return (
     <OnboardingShell
-      step={2}
-      canGoBack={false}
+      step={1}
       title="Who are we caring for?"
       subtitle="Tell us about your pet. Their challenges are built around them."
     >

@@ -45,7 +45,7 @@ export default function RootLayout() {
       } else if (session === "ready") {
         router.replace("/");
       } else {
-        router.replace("/pet");
+        router.replace("/start");
       }
     })();
     return () => {

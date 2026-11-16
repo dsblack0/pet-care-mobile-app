@@ -8,10 +8,8 @@ import { pendingInvitation } from "@/lib/pendingInvite";
 export default function OnboardingLayout() {
   const session = sessionStore.useValue();
   const pathname = usePathname();
-  const [inviteToken, setInviteToken] = useState<string | null | undefined>(
-    undefined,
-  );
   const isPetSetup = [
+    "/start",
     "/pet",
     "/invite-family",
     "/focus",
@@ -19,19 +17,25 @@ export default function OnboardingLayout() {
     "/care-notes",
     "/plan",
   ].includes(pathname);
+  const checkInvite = isPetSetup && session === "onboarding";
+  // The saved invite as last read, with the path it was read for. Only the
+  // async callback sets it; a result for another path is ignored below.
+  const [inviteCheck, setInviteCheck] = useState<{
+    path: string;
+    token: string | null;
+  } | null>(null);
   useEffect(() => {
-    if (!isPetSetup || session !== "onboarding") {
-      setInviteToken(undefined);
-      return;
-    }
+    if (!checkInvite) return;
     let cancelled = false;
     void pendingInvitation().then((token) => {
-      if (!cancelled) setInviteToken(token);
+      if (!cancelled) setInviteCheck({ path: pathname, token });
     });
     return () => {
       cancelled = true;
     };
-  }, [isPetSetup, session, pathname]);
+  }, [checkInvite, pathname]);
+  const inviteToken =
+    checkInvite && inviteCheck?.path === pathname ? inviteCheck.token : null;
 
   // Wait for Firebase's persisted sign-in and family membership lookup.
   if (session === "loading") return null;
@@ -41,7 +45,8 @@ export default function OnboardingLayout() {
   if (session === "ready") return <Redirect href="/" />;
 
   if (isPetSetup && session === "onboarding") {
-    if (inviteToken === undefined) return null;
+    // Keep the stack mounted while the invite check runs. Rendering nothing here
+    // drops the navigator, and the app falls back to the tabs.
     if (inviteToken)
       return (
         <Redirect
@@ -70,6 +75,8 @@ export default function OnboardingLayout() {
       <Stack.Screen name="welcome" />
       <Stack.Screen name="sign-in" />
       <Stack.Screen name="create-account" />
+      <Stack.Screen name="about-you" options={{ gestureEnabled: false }} />
+      <Stack.Screen name="start" options={{ gestureEnabled: false }} />
       <Stack.Screen name="pet" options={{ gestureEnabled: false }} />
       <Stack.Screen name="invite-family" options={{ gestureEnabled: false }} />
       <Stack.Screen name="focus" />

@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useRef, useState } from "react";
+import { useRef, useState, type ComponentRef } from "react";
 import {
   Image,
   Pressable,
@@ -46,7 +46,7 @@ const SAMPLE_LOGS = [
 
 export default function WelcomeScreen() {
   const { width } = useWindowDimensions();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const [index, setIndex] = useState(0);
   const scrollY = useSharedValue(0);
   const atBottom = useSharedValue(0);

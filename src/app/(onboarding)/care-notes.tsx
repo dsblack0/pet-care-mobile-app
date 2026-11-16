@@ -48,7 +48,7 @@ export default function OnboardingCareNotesScreen() {
 
   return (
     <OnboardingShell
-      step={6}
+      step={5}
       title="Anything we should work around?"
       subtitle={`Challenges will skip anything that isn’t right for ${name}.`}
       buttonLabel={restrictions.length ? "Continue" : "Nothing to note"}

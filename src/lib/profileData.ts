@@ -1,4 +1,7 @@
 // Data for the User Profile screen, read from Firestore.
+import { doc, updateDoc } from "firebase/firestore";
+
+import { currentUserId } from "@/lib/auth";
 import {
   getLevels,
   getPet,
@@ -8,6 +11,8 @@ import {
   getUsersById,
 } from "@/lib/db";
 import type { Level, Pet, User } from "@/types/firestore";
+import { db } from "../../firebaseConfig";
+import type { AgeRange, Interest } from "../../models/users";
 
 export type ProfilePet = {
   pet: Pet;
@@ -56,4 +61,12 @@ export async function fetchProfile(
     isOrganizer: links.some((up) => up.role === "owner"),
     pets: pets.filter((p): p is ProfilePet => !!p),
   };
+}
+
+/** Save the About you answers on the signed-in user's document. */
+export async function saveAboutYou(
+  ageRange: AgeRange,
+  interests: Interest[],
+): Promise<void> {
+  await updateDoc(doc(db, "users", currentUserId()), { ageRange, interests });
 }
