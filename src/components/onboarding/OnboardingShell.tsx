@@ -1,7 +1,7 @@
 // Frame for every onboarding step: back button and progress on top, a title, scrolling content,
 // and the main button pinned to the bottom.
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import type { ReactNode } from "react";
 import {
   KeyboardAvoidingView,
@@ -17,13 +17,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ProgressBar } from "@/components/home/ProgressBar";
 import { colors, fonts } from "@/constants/theme";
 
-export const ONBOARDING_STEPS = 6;
+/** Numbered steps cover pet setup only: pet, family, focus, pace, care notes. */
+export const ONBOARDING_STEPS = 5;
 
 type Props = {
   /** 1-based step for the progress bar; omit to hide it. */
   step?: number;
   /** Hide back once going back would redo a saved step. */
   canGoBack?: boolean;
+  /** Where back goes when there is no history, e.g. after reopening the app. */
+  backFallback?: Href;
   title: string;
   subtitle?: string;
   children?: ReactNode;
@@ -42,6 +45,7 @@ type Props = {
 export function OnboardingShell({
   step,
   canGoBack = true,
+  backFallback,
   title,
   subtitle,
   children,
@@ -54,13 +58,19 @@ export function OnboardingShell({
   hero,
 }: Props) {
   const inactive = busy || disabled;
+  const hasHistory = router.canGoBack();
+  const showBack = canGoBack && (hasHistory || !!backFallback);
+  const goBack = () => {
+    if (hasHistory) router.back();
+    else if (backFallback) router.replace(backFallback);
+  };
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.topBar}>
-        {canGoBack && router.canGoBack() ? (
+        {showBack ? (
           <Pressable
             style={styles.back}
-            onPress={() => router.back()}
+            onPress={goBack}
             accessibilityRole="button"
             accessibilityLabel="Back"
             hitSlop={8}

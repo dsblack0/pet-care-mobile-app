@@ -1,11 +1,9 @@
 import { router, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 
-import { fieldStyles } from "@/components/form/fieldStyles";
 import { PhotoPickerCard } from "@/components/form/PhotoPickerCard";
-import { SelectField } from "@/components/form/SelectField";
 import {
   FooterLink,
   OnboardingShell,
@@ -15,22 +13,11 @@ import { TextField } from "@/components/onboarding/TextField";
 import { authErrorMessage, createAccount } from "@/lib/auth";
 import { pendingInvitation, rememberInvitation } from "@/lib/pendingInvite";
 import { uploadImage } from "@/lib/storage";
-import type { UserGender } from "../../../models/users";
-
-const GENDER_LABELS = ["Male", "Female", "Other"] as const;
-type GenderLabel = (typeof GENDER_LABELS)[number];
-const GENDER_VALUES: Record<GenderLabel, UserGender> = {
-  Male: "male",
-  Female: "female",
-  Other: "other",
-};
 
 export default function CreateAccountScreen() {
   const { invitationId } = useLocalSearchParams<{ invitationId?: string }>();
   const [name, setName] = useState("");
   const [profilePhotoUri, setProfilePhotoUri] = useState<string | null>(null);
-  const [age, setAge] = useState("");
-  const [gender, setGender] = useState<GenderLabel | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -54,11 +41,7 @@ export default function CreateAccountScreen() {
 
   const submit = async () => {
     if (!name.trim() || !email.trim() || !password) {
-      setError("Please fill in your name, email and password.");
-      return;
-    }
-    if (age && !/^\d+$/.test(age)) {
-      setError("Enter a whole-number age, or leave it blank.");
+      setError("Please fill in your first name, email and password.");
       return;
     }
     setBusy(true);
@@ -70,20 +53,9 @@ export default function CreateAccountScreen() {
       const profilePhotoPath = profilePhotoUri
         ? await uploadImage(profilePhotoUri, "users/profile.jpg")
         : null;
-      await createAccount(
-        name,
-        email,
-        password,
-        age === "" ? null : Number(age),
-        gender ? GENDER_VALUES[gender] : null,
-        profilePhotoPath,
-      );
-      if (token)
-        router.replace({
-          pathname: "/invite/[invitationId]",
-          params: { invitationId: token },
-        });
-      else router.replace("/pet");
+      await createAccount(name, email, password, null, null, profilePhotoPath);
+      // About you sends invited people on to their invitation afterwards.
+      router.replace("/about-you");
     } catch (e) {
       setError(authErrorMessage(e));
       setBusy(false);
@@ -92,9 +64,8 @@ export default function CreateAccountScreen() {
 
   return (
     <OnboardingShell
-      step={1}
       title="Create your account"
-      subtitle="Your family will see your name when you log care for your pet."
+      subtitle="Your family will see your first name when you log care for your pet."
       buttonLabel="Create account"
       onPress={submit}
       busy={busy}
@@ -120,31 +91,13 @@ export default function CreateAccountScreen() {
       />
       <View style={[onboardingStyles.card, onboardingStyles.form]}>
         <TextField
-          label="Your name"
+          label="First name"
           value={name}
           onChangeText={setName}
-          placeholder="e.g. Alex Johnson"
-          autoComplete="name"
-          textContentType="name"
+          placeholder="e.g. Alex"
+          autoComplete="given-name"
+          textContentType="givenName"
         />
-        <TextField
-          label="Age (optional)"
-          value={age}
-          onChangeText={(value) => setAge(value.replace(/[^0-9]/g, ""))}
-          placeholder="Enter your age"
-          keyboardType="number-pad"
-          maxLength={3}
-        />
-        <View>
-          <Text style={fieldStyles.label}>Gender (optional)</Text>
-          <SelectField
-            label="Gender (optional)"
-            placeholder="Select gender (optional)"
-            value={gender}
-            options={GENDER_LABELS}
-            onChange={setGender}
-          />
-        </View>
         <TextField
           label="Email"
           value={email}

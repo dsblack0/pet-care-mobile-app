@@ -42,7 +42,7 @@ export default function OnboardingFamilyScreen() {
 
   return (
     <OnboardingShell
-      step={3}
+      step={2}
       canGoBack={false}
       title={`Who else helps with ${petName || "your pet"}?`}
       subtitle="Invite the people who share the care. Challenges work best when everyone can join in."

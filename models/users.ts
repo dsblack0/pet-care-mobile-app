@@ -8,12 +8,32 @@ export interface NotificationPreferences {
 
 export type UserGender = "male" | "female" | "other";
 
+/** Pawmily is for ages 13 and up, so there is no younger range. */
+export const AGE_RANGES = ["13–17", "18–25", "26–40", "41–60", "60+"] as const;
+export type AgeRange = (typeof AGE_RANGES)[number];
+
+/** What the user enjoys, used to suggest family challenges. */
+export const INTERESTS = [
+  "Outdoors & nature",
+  "Food & cooking",
+  "Games",
+  "Arts & crafts",
+  "Fitness & sports",
+  "Movies & music",
+  "Exploring new places",
+  "Relaxing at home",
+] as const;
+export type Interest = (typeof INTERESTS)[number];
+
 export interface User {
   userId: string;
   name: string;
   email: string;
   age: number | null;
   gender: UserGender | null;
+  /** Set on the About you step. Missing on older accounts. */
+  ageRange?: AgeRange | null;
+  interests?: Interest[];
   joinedAt: Timestamp;
   profilePhotoPath: string | null;
   numberOfPets: number;

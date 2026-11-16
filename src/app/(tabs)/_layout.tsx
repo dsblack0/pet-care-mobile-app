@@ -55,7 +55,7 @@ function OnboardingRedirect() {
         }}
       />
     );
-  return <Redirect href="/pet" />;
+  return <Redirect href="/start" />;
 }
 
 export default function TabLayout() {

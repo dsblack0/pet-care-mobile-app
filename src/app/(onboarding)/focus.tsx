@@ -35,7 +35,7 @@ export default function OnboardingFocusScreen() {
 
   return (
     <OnboardingShell
-      step={4}
+      step={3}
       title={`What should ${petName || "your pet"}’s challenges focus on?`}
       subtitle="Pick everything your family wants to do more of together."
       buttonLabel="Continue"
