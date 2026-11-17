@@ -118,7 +118,10 @@ export async function regenerateFamilyChallenges(
     const input: GenerationInput = {
       petId,
       petName: pet.name,
-      petSpecies: speciesKey(pet.species),
+      petSpecies:
+        speciesKey(pet.species) === "other"
+          ? undefined
+          : (speciesKey(pet.species) as "dog" | "cat" | "rabbit"),
       petBreed: pet.breed ?? undefined,
       petAgeYears: pet.age,
       petRestrictions: settings.restrictions,
