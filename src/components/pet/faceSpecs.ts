@@ -8,7 +8,7 @@ export type FaceSpec = {
   nose: string;
   eye: string;
   brow: string;
-  earStyle: "floppy" | "pointed" | "round";
+  earStyle: "floppy" | "pointed" | "round" | "long";
   pupil: "round" | "slit";
   muzzleStyle: "snout" | "pads";
   whiskers: boolean;
@@ -44,6 +44,21 @@ const cat: FaceSpec = {
   whiskers: true,
 };
 
+const rabbit: FaceSpec = {
+  fur: "#C9B8A6",
+  halo: "#F1EAE2",
+  ear: "#C9B8A6",
+  earInner: "#F2B8C6",
+  muzzle: "#F4EEE7",
+  nose: "#E58FA5",
+  eye: "#2B2024",
+  brow: "#9C8A78",
+  earStyle: "long",
+  pupil: "round",
+  muzzleStyle: "pads",
+  whiskers: true,
+};
+
 // Used for any species without its own entry.
 const generic: FaceSpec = {
   fur: "#D9C7B0",
@@ -60,7 +75,7 @@ const generic: FaceSpec = {
   whiskers: false,
 };
 
-const SPECS: Record<string, FaceSpec> = { dog, cat };
+const SPECS: Record<string, FaceSpec> = { dog, cat, rabbit, bunny: rabbit };
 
 export function getFaceSpec(species: string): FaceSpec {
   return SPECS[species.trim().toLowerCase()] ?? generic;

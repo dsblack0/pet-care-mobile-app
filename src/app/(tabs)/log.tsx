@@ -184,7 +184,11 @@ export default function LogScreen() {
               title={`What did ${pet?.name ?? "your pet"} do?`}
               hint="Required"
             />
-            <ActivityGrid selected={activity} onSelect={setActivity} />
+            <ActivityGrid
+              selected={activity}
+              onSelect={setActivity}
+              species={pet?.species}
+            />
             {activity === "Other" && (
               <TextInput style={styles.otherInput} value={otherActivity} onChangeText={setOtherActivity} placeholder="What activity did you do?" placeholderTextColor={colors.textMuted} maxLength={100} accessibilityLabel="Custom activity name" />
             )}

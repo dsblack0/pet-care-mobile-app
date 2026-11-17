@@ -32,7 +32,7 @@ export type ChallengePreference = {
 export type GenerationInput = {
   petId: string;
   petName: string;
-  petSpecies?: "dog" | "cat";
+  petSpecies?: "dog" | "cat" | "rabbit";
   petBreed?: string;
   petAgeYears?: number;
   petRestrictions?: string[];
@@ -373,12 +373,42 @@ function previousSummary(accepted: FirebaseChallenge[]): string {
     .slice(0, 650);
 }
 
+type OpenSlot = { category: Category; goalType: GoalType; joint: boolean };
+
+/**
+ * Category, goal type and joint combinations not used yet this week. The
+ * validator rejects a repeat of any of these, so this is the real room left.
+ */
+function openSlots(
+  eligible: EligiblePreference[],
+  accepted: FirebaseChallenge[],
+): OpenSlot[] {
+  const slots: OpenSlot[] = [];
+  for (const e of eligible) {
+    const shared = e.participants.length >= 2;
+    for (const goalType of GOAL_TYPES) {
+      if (goalType === "unique_participants" && !shared) continue;
+      for (const joint of shared ? [false, true] : [false]) {
+        const used = accepted.some(
+          (c) =>
+            c.activityTypes[0] === ACTIVITY_TYPE[e.category] &&
+            c.goalType === goalType &&
+            c.jointActivity === joint,
+        );
+        if (!used) slots.push({ category: e.category, goalType, joint });
+      }
+    }
+  }
+  return slots;
+}
+
 function buildPrompt(
   input: GenerationInput,
   eligible: EligiblePreference[],
   accepted: FirebaseChallenge[],
   compactRetry: boolean,
   lastFailure?: string,
+  attempt = 0,
 ): string {
   const usedCategories = new Set(accepted.map((c) => c.activityTypes[0]));
   const goalCounts = Object.fromEntries(
@@ -396,6 +426,11 @@ function buildPrompt(
       Number(usedCategories.has(ACTIVITY_TYPE[b.category])),
   );
   const remaining = Math.max(0, (input.weeklyCount ?? 5) - accepted.length);
+  // With every category used, the model tends to return the same title on
+  // each retry. Naming one open combination, a different one per attempt,
+  // gives it a concrete target that the validator will accept.
+  const open = unused.length ? [] : openSlots(eligible, accepted);
+  const target = open.length ? open[attempt % open.length] : null;
   const preferredCategories = unused.length
     ? unused.map((e) => e.category)
     : eligible.map((e) => e.category);
@@ -438,6 +473,11 @@ function buildPrompt(
     ...(unused.length
       ? [
           "Do NOT repeat a used category while unused eligible categories remain. A joint variation of a solo challenge is NOT a new activity.",
+        ]
+      : []),
+    ...(target
+      ? [
+          `REQUIRED for this challenge: category=${target.category}, goalType=${target.goalType}, jointActivity=${target.joint}. Write a NEW title for exactly this; it must not match any accepted title.`,
         ]
       : []),
     `This week's accepted challenges:\n${previousSummary(accepted)}`,
@@ -630,6 +670,13 @@ export async function generateApple(
     fail(`Apple Foundation Models unavailable: ${availability}`);
   }
 
+  const possible = openSlots(eligible, []).length;
+  if (possible < count) {
+    fail(
+      `The chosen activities allow only ${possible} different challenge${possible === 1 ? "" : "s"} a week, but ${count} were requested. Pick more activities or fewer challenges in Preferences.`,
+    );
+  }
+
   // Failed slots do not abort the run. Extra slots provide bounded recovery.
   const slotLimit = count + MAX_EXTRA_SLOTS;
   const failedSlots: number[] = [];
@@ -648,6 +695,7 @@ export async function generateApple(
         challenges,
         attemptIndex > 0,
         lastFailure,
+        attemptIndex,
       );
 
       prompts.push(prompt);

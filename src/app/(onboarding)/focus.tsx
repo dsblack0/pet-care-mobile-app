@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ActivityIcon } from "@/components/home/ActivityIcon";
 import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
+import { activitiesFor } from "@/constants/species";
 import { colors, fonts } from "@/constants/theme";
 import {
   CHALLENGE_ACTIVITIES,
@@ -24,7 +25,7 @@ const COPY: Record<
 };
 
 export default function OnboardingFocusScreen() {
-  const { petName, activityTypes } = onboardingStore.useValue();
+  const { petName, species, activityTypes } = onboardingStore.useValue();
 
   const toggle = (type: string) =>
     updateAnswers({
@@ -43,7 +44,9 @@ export default function OnboardingFocusScreen() {
       onPress={() => router.push("/pace")}
     >
       <View style={styles.grid}>
-        {CHALLENGE_ACTIVITIES.map((type) => {
+        {CHALLENGE_ACTIVITIES.filter((type) =>
+          activitiesFor(species).includes(type),
+        ).map((type) => {
           const on = activityTypes.includes(type);
           return (
             <Pressable

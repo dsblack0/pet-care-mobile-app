@@ -16,6 +16,7 @@ import { HomeHeader } from "@/components/home/HomeHeader";
 import { ParticipantsCard } from "@/components/log/ParticipantsCard";
 import { SectionHeader } from "@/components/log/SectionHeader";
 import { currentUserId } from "@/lib/auth";
+import { activitiesFor } from "@/constants/species";
 import { colors, fonts } from "@/constants/theme";
 import { usePets } from "@/hooks/usePets";
 import {
@@ -136,7 +137,9 @@ export default function ChallengePreferencesScreen() {
             />
             <Text style={styles.intro}>Pick at least one.</Text>
             <ActivityChoiceGrid
-              options={CHALLENGE_ACTIVITIES}
+              options={CHALLENGE_ACTIVITIES.filter((type) =>
+                activitiesFor(pet?.species).includes(type),
+              )}
               selected={activityTypes}
               onToggle={(type) => {
                 setActivityTypes((cur) => toggle(cur, type));

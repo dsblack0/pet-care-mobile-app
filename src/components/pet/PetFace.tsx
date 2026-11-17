@@ -212,6 +212,24 @@ export function PetFace({
         />
       );
     }
+    if (spec.earStyle === "long") {
+      return (
+        <Animated.View
+          style={[
+            box(side === "left" ? 24 : 58, 0, 18, 46),
+            { backgroundColor: spec.ear, borderRadius: 9 * u },
+            style,
+          ]}
+        >
+          <View
+            style={[
+              box(5, 6, 8, 32),
+              { backgroundColor: spec.earInner, borderRadius: 4 * u },
+            ]}
+          />
+        </Animated.View>
+      );
+    }
     if (spec.earStyle === "pointed") {
       return (
         <Animated.View

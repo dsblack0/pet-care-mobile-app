@@ -22,6 +22,7 @@ import {
   userRef,
 } from "@/lib/db";
 import { dataVersionStore } from "@/lib/store";
+import { activitiesFor, presetTemplates, speciesKey } from "@/constants/species";
 import type {
   GenerationInput,
   Category,
@@ -100,7 +101,9 @@ export async function regenerateFamilyChallenges(
     const preferences = Object.entries(categories).map(
       ([activity, category]) => ({
         category,
-        enabled: enabled.includes(activity),
+        enabled:
+          enabled.includes(activity) &&
+          activitiesFor(pet.species).includes(activity),
         memberIds: (
           pref.saved?.participantsByActivity?.[activity] ??
           pref.saved?.userIds ??
@@ -115,7 +118,7 @@ export async function regenerateFamilyChallenges(
     const input: GenerationInput = {
       petId,
       petName: pet.name,
-      petSpecies: pet.species.toLowerCase() === "cat" ? "cat" : "dog",
+      petSpecies: speciesKey(pet.species),
       petBreed: pet.breed ?? undefined,
       petAgeYears: pet.age,
       petRestrictions: settings.restrictions,
@@ -239,50 +242,7 @@ export async function createFreePresetChallenges(petId: string): Promise<void> {
   const enabled = pref.saved?.activityTypes?.length
     ? pref.saved.activityTypes
     : ["Feed", "Walk", "Train", "Play", "Groom"];
-  const templates = [
-    {
-      activity: "Feed",
-      title: `Log ${pet.name}'s meals on 3 days`,
-      goalType: "daily",
-      goal: 3,
-    },
-    {
-      activity: "Walk",
-      title: `Take ${pet.name} for 3 walks`,
-      goalType: "unique_activities",
-      goal: 3,
-    },
-    {
-      activity: "Play",
-      title: `Play with ${pet.name} for 30 minutes`,
-      goalType: "duration",
-      goal: 30,
-    },
-    {
-      activity: "Train",
-      title: `Practice 2 training sessions with ${pet.name}`,
-      goalType: "unique_activities",
-      goal: 2,
-    },
-    {
-      activity: "Groom",
-      title: `Complete 2 grooming sessions for ${pet.name}`,
-      goalType: "unique_activities",
-      goal: 2,
-    },
-    {
-      activity: "Feed",
-      title: `Feed ${pet.name} on 5 different days`,
-      goalType: "daily",
-      goal: 5,
-    },
-    {
-      activity: "Play",
-      title: `Enjoy 3 play sessions with ${pet.name}`,
-      goalType: "unique_activities",
-      goal: 3,
-    },
-  ].filter(
+  const templates = presetTemplates(pet.species, pet.name).filter(
     (t) =>
       enabled.includes(t.activity) &&
       (pref.saved?.participantsByActivity?.[t.activity] ?? members).length,

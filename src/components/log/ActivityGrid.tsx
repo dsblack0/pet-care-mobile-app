@@ -2,6 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ACTIVITY_ICONS } from "@/components/home/ActivityIcon";
+import { activitiesFor } from "@/constants/species";
 import { activityTint, colors, fonts } from "@/constants/theme";
 
 export const ACTIVITIES: { type: string; label: string }[] = [
@@ -14,12 +15,20 @@ export const ACTIVITIES: { type: string; label: string }[] = [
   { type: "Other", label: "Other" },
 ];
 
-type Props = { selected: string | null; onSelect: (type: string) => void };
+type Props = {
+  selected: string | null;
+  onSelect: (type: string) => void;
+  /** Hides activities that don't fit the pet, e.g. walks for a cat. */
+  species?: string;
+};
 
-export function ActivityGrid({ selected, onSelect }: Props) {
+export function ActivityGrid({ selected, onSelect, species }: Props) {
+  const allowed = activitiesFor(species);
   return (
     <View style={styles.grid}>
-      {ACTIVITIES.map(({ type, label }) => {
+      {ACTIVITIES.filter(
+        ({ type }) => type === "Other" || allowed.includes(type),
+      ).map(({ type, label }) => {
         const active = type === selected;
         const tint = activityTint[type] ?? activityTint.Other;
         return (

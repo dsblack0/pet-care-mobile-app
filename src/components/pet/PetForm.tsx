@@ -15,6 +15,7 @@ import { fieldStyles } from "@/components/form/fieldStyles";
 import { PhotoPickerCard } from "@/components/form/PhotoPickerCard";
 import { SelectField } from "@/components/form/SelectField";
 import { SectionHeader } from "@/components/log/SectionHeader";
+import { PET_SPECIES } from "@/constants/species";
 import { colors, fonts } from "@/constants/theme";
 import type { NewPetInput } from "@/lib/petData";
 
@@ -26,7 +27,7 @@ type Props = {
   onSubmit: (input: NewPetInput) => Promise<void>;
 };
 
-const SPECIES = ["Dog", "Cat", "Rabbit", "Bird", "Other"] as const;
+const SPECIES = PET_SPECIES;
 const SEXES = ["Male", "Female"] as const;
 
 /** Whole years between a birthday and today. */
