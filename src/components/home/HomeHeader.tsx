@@ -3,6 +3,8 @@ import { router } from "expo-router";
 import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { goBackToVisitedPage } from "@/lib/navigationHistory";
+
 import { PetSwitcherSheet } from "@/components/pet/PetSwitcherSheet";
 
 import { colors, fonts } from "@/constants/theme";
@@ -29,8 +31,7 @@ type Props = {
  * be nothing to go back to, so fall back to Home instead of doing nothing.
  */
 function goBack() {
-  if (router.canGoBack()) router.back();
-  else router.navigate("/");
+  goBackToVisitedPage("/");
 }
 
 export function HomeHeader({

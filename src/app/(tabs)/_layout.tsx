@@ -1,11 +1,13 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Redirect, Tabs } from "expo-router";
+import { Redirect, Tabs, router, usePathname } from "expo-router";
+
 import { useEffect, useState, type ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { colors } from "@/constants/theme";
 import { sessionStore } from "@/lib/auth";
 import { pendingInvitation } from "@/lib/pendingInvite";
+import { recordVisitedPage } from "@/lib/navigationHistory";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -60,9 +62,23 @@ function OnboardingRedirect() {
 
 export default function TabLayout() {
   const session = sessionStore.useValue();
+  const pathname = usePathname();
+  useEffect(() => {
+    if (session === "ready") recordVisitedPage(pathname);
+  }, [pathname, session]);
   if (session === "loading") return null;
   if (session === "onboarding") return <OnboardingRedirect />;
   if (session !== "ready") return <Redirect href="/welcome" />;
+
+  // A tab press must target its overview route, not the last active nested
+  // screen (Rewards, Help, Profile, Memory Details, etc.). Using one explicit
+  // route replacement for all three tabs avoids competing navigation actions.
+  const overviewTabListeners = (overview: "/(tabs)/challenges" | "/(tabs)/memories" | "/(tabs)/family") => ({
+    tabPress: (event: { preventDefault: () => void }) => {
+      event.preventDefault();
+      router.replace(overview);
+    },
+  });
 
   return (
     <Tabs
@@ -82,6 +98,7 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="challenges"
+        listeners={() => overviewTabListeners("/(tabs)/challenges")}
         options={{
           title: "Challenges",
           popToTopOnBlur: true,
@@ -101,6 +118,7 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="memories"
+        listeners={() => overviewTabListeners("/(tabs)/memories")}
         options={{
           title: "Memories",
           popToTopOnBlur: true,
@@ -109,8 +127,10 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="family"
+        listeners={() => overviewTabListeners("/(tabs)/family")}
         options={{
           title: "Family",
+          popToTopOnBlur: true,
           tabBarIcon: tabIcon("people", "people-outline"),
         }}
       />

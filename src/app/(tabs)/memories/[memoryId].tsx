@@ -1,3 +1,4 @@
+import { goBackToVisitedPage } from "@/lib/navigationHistory";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState, type ComponentProps } from "react";
@@ -59,7 +60,7 @@ export default function MemoryDetailScreen() {
     ]);
   };
   return <SafeAreaView style={styles.safe} edges={["top"]}>
-    <View style={styles.header}><Pressable onPress={() => router.back()} style={styles.back} accessibilityRole="button"><Ionicons name="arrow-back" size={24} color={colors.text} /></Pressable><Text style={styles.headerTitle}>Memory</Text>{canDelete ? <View style={styles.actions}><Pressable onPress={edit} style={styles.editButton} accessibilityRole="button" accessibilityLabel="Edit memory"><Ionicons name="create-outline" size={19} color={colors.primary} /></Pressable><Pressable onPress={confirmDelete} disabled={deleting} style={styles.deleteButton} accessibilityRole="button" accessibilityLabel="Delete memory"><Ionicons name="trash-outline" size={19} color="#B5442A" /></Pressable></View> : <View style={styles.back} />}</View>
+    <View style={styles.header}><Pressable onPress={() => { goBackToVisitedPage("/memories"); }} style={styles.back} accessibilityRole="button"><Ionicons name="arrow-back" size={24} color={colors.text} /></Pressable><Text style={styles.headerTitle}>Memory</Text>{canDelete ? <View style={styles.actions}><Pressable onPress={edit} style={styles.editButton} accessibilityRole="button" accessibilityLabel="Edit memory"><Ionicons name="create-outline" size={19} color={colors.primary} /></Pressable><Pressable onPress={confirmDelete} disabled={deleting} style={styles.deleteButton} accessibilityRole="button" accessibilityLabel="Delete memory"><Ionicons name="trash-outline" size={19} color="#B5442A" /></Pressable></View> : <View style={styles.back} />}</View>
     {!page && !error ? <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} /> :
       <ScrollView contentContainerStyle={styles.content}>
         {!memory ? <Text style={styles.body}>This memory is unavailable.</Text> : <>
