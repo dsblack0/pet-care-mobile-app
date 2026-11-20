@@ -156,7 +156,7 @@ export default function LogScreen() {
         pet={pet}
         pets={pets}
         onSelectPet={selectPet}
-        eyebrow="Log Activity"
+        eyebrow="Log Memory"
         compact
       />
       <KeyboardAvoidingView
@@ -208,7 +208,7 @@ export default function LogScreen() {
             <WhenField value={occurredAt} onChange={setOccurredAt} />
           </View>
 
-          <View>
+          {family.some((user) => user.userId !== currentUserId()) && <View>
             <SectionHeader
               title="Who participated?"
               hint="Select all that apply"
@@ -219,7 +219,7 @@ export default function LogScreen() {
               selected={participants}
               onToggle={toggleParticipant}
             />
-          </View>
+          </View>}
 
           <View>
             <SectionHeader title="Where were you?" hint="Optional" />
@@ -236,7 +236,7 @@ export default function LogScreen() {
             >
               <Ionicons name="checkmark" size={22} color="#FFFFFF" />
               <Text style={styles.buttonText}>
-                {submitting ? "Saving…" : "Log Activity"}
+                {submitting ? "Saving…" : "Log Memory"}
               </Text>
             </Pressable>
             <Text style={styles.summary}>

@@ -16,6 +16,7 @@ import {
   getChallengesForPet,
   getSchedulesForPet,
 } from "@/lib/db";
+import { resolveLocationForSave } from "@/lib/location";
 import { progressFromMemories } from "@/lib/challengeProgress";
 import { toDate } from "@/lib/homeData";
 import { isSameDay } from "@/lib/format";
@@ -81,6 +82,7 @@ async function findScheduleToLink(
 }
 
 export async function logActivity(input: LogActivityInput): Promise<Memory> {
+  const locationLabel = await resolveLocationForSave(input.location);
   // A new Firestore document id, generated locally, so the photo can be named after it.
   const memoryId = doc(collection(db, "memories")).id;
 
@@ -129,7 +131,7 @@ export async function logActivity(input: LogActivityInput): Promise<Memory> {
     tx.set(doc(db, "memories", memoryId), {
       ...newMemory,
       ...(input.customActivityName ? { customActivityName: input.customActivityName } : {}),
-      ...(input.location?.label ? { locationLabel: input.location.label } : {}),
+      ...(locationLabel ? { locationLabel } : {}),
     });
     tx.update(petDocument, { totalPoints: newTotal, level: nextLevel });
     const allMemories = [...existingMemories, { memoryId, ...newMemory } as Memory];

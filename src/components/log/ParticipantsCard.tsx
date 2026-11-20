@@ -21,22 +21,12 @@ export function ParticipantsCard({
   onToggle,
   hint: customHint,
 }: Props) {
-  // Current user first, labelled "You".
-  const people = [...family].sort((a, b) =>
-    a.userId === currentUserId ? -1 : b.userId === currentUserId ? 1 : 0,
-  );
-  const nameOf = (u: User) => (u.userId === currentUserId ? "You" : u.name);
-  const selectedNames = people
-    .filter((u) => selected.includes(u.userId))
-    .map(nameOf);
-
-  const hint =
-    customHint ??
-    (selectedNames.length > 1
-      ? `${selectedNames.join(" + ")} selected · eligible for Together Bonus`
-      : selectedNames.length === 1
-        ? `${selectedNames[0]} selected · add someone for a Together Bonus`
-        : "Pick at least one person");
+  // The creator is always included in the memory, but is not selectable.
+  const people = family.filter((user) => user.userId !== currentUserId);
+  const selectedNames = people.filter((user) => selected.includes(user.userId)).map((user) => user.name);
+  const hint = customHint ?? (selectedNames.length
+    ? `${selectedNames.join(" + ")} selected · eligible for Together Bonus`
+    : "Select family members to earn a Together Bonus");
 
   return (
     <View style={styles.card}>
@@ -50,7 +40,7 @@ export function ParticipantsCard({
               onPress={() => onToggle(u.userId)}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: active }}
-              accessibilityLabel={nameOf(u)}
+              accessibilityLabel={u.name}
             >
               <View style={[styles.avatar, active && styles.avatarActive]}>
                 <Text
@@ -65,7 +55,7 @@ export function ParticipantsCard({
                 )}
               </View>
               <Text style={[styles.name, active && styles.nameActive]}>
-                {nameOf(u)}
+                {u.name}
               </Text>
             </Pressable>
           );
