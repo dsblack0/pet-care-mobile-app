@@ -18,6 +18,8 @@ import { ACTIVITIES } from "@/components/log/ActivityGrid";
 import { dataVersionStore, selectedPetStore } from "@/lib/store";
 import { useImageUrl } from "@/lib/storage";
 import { fetchMemoriesPage, type MemoriesPage } from "@/lib/memoriesData";
+import { getChallengesForPet } from "@/lib/db";
+import type { Challenge } from "@/types/firestore";
 import type { User } from "@/types/firestore";
 
 function Person({ user, label }: { user?: User; label?: string }) {
@@ -35,6 +37,7 @@ export default function MemoryDetailScreen() {
   const { memoryId } = useLocalSearchParams<{ memoryId: string }>();
   const { pet, pets } = usePets();
   const [page, setPage] = useState<MemoriesPage | null>(null);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [error, setError] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [resolvedLocation, setResolvedLocation] = useState<string | null>(null);
@@ -45,6 +48,15 @@ export default function MemoryDetailScreen() {
     if (!pet?.petId) return;
     let active = true; setPage(null); setError(false);
     fetchMemoriesPage(pet.petId).then((result) => { if (active) setPage(result); }).catch(() => { if (active) setError(true); });
+    return () => { active = false; };
+  }, [pet?.petId, memoryId, dataVersion]);
+  useEffect(() => {
+    if (!pet?.petId) { setChallenges([]); return; }
+    let active = true;
+    setChallenges([]);
+    getChallengesForPet(pet.petId)
+      .then((result) => { if (active) setChallenges(result); })
+      .catch(() => { if (active) setChallenges([]); });
     return () => { active = false; };
   }, [pet?.petId, memoryId, dataVersion]);
   const memory = page?.memories.find((item) => item.memoryId === memoryId);
@@ -100,12 +112,23 @@ export default function MemoryDetailScreen() {
   const activityTag = memory?.activityType === "Other"
     ? memoryActivityName(memory)
     : ACTIVITIES.find((item) => item.type === memory?.activityType)?.label ?? memory?.activityType ?? "";
-  const points = memory ? memory.basePoints + memory.bonusPoints : 0;
+  // Show challenges this memory qualifies for, not points earned by logging it.
+  // Match the same date, activity and eligible-participant rules used by challenge progress.
+  const contributedChallenges = memory ? challenges.filter((challenge) => {
+    if (challenge.completionStatus === "cancelled") return false;
+    const occurred = toDate(memory.occurredAt).getTime();
+    return occurred >= toDate(challenge.startDate).getTime()
+      && occurred <= toDate(challenge.endDate).getTime()
+      && (challenge.activityTypes.length === 0 || challenge.activityTypes.includes(memory.activityType))
+      && memory.participants.some((participant) => challenge.participants.some((eligible) => eligible.id === participant.id))
+      && (!(challenge.goalType === "shared_activities" || challenge.jointActivity)
+        || memory.participants.filter((participant) => challenge.participants.some((eligible) => eligible.id === participant.id)).length >= 2);
+  }) : [];
   const canDelete = !!memory && memory.createdBy.id === currentUserId();
   const edit = () => { if (memory && canDelete) router.push({ pathname: "/memories/[memoryId]/edit", params: { memoryId: memory.memoryId } }); };
   const confirmDelete = () => {
     if (!memory || !pet || deleting) return;
-    Alert.alert("Delete memory?", "This will remove the memory and reverse its activity points and challenge progress.", [
+    Alert.alert("Delete memory?", "This will remove the memory and recalculate Together Bonus points and challenge rewards.", [
       { text: "Cancel", style: "cancel" },
       { text: "Delete", style: "destructive", onPress: async () => {
         setDeleting(true);
@@ -135,7 +158,7 @@ export default function MemoryDetailScreen() {
             </View>
           </View>
           {canDelete && <View style={styles.actions}><Pressable onPress={edit} style={styles.editButton} accessibilityRole="button" accessibilityLabel="Edit memory"><Ionicons name="create-outline" size={19} color={colors.primary} /><Text style={styles.editText}>Edit</Text></Pressable><Pressable onPress={confirmDelete} disabled={deleting} style={styles.deleteButton} accessibilityRole="button" accessibilityLabel="Delete memory"><Ionicons name="trash-outline" size={19} color="#B5442A" /><Text style={styles.deleteText}>Delete</Text></Pressable></View>}
-          {points > 0 && <View style={styles.points}><Ionicons name="paw" size={24} color={colors.primary} /><View><Text style={styles.pointsTitle}>+{points} points</Text><Text style={styles.pointsSubtitle}>Earned for your family</Text></View></View>}
+          {contributedChallenges.length > 0 && <View style={styles.points}><Ionicons name="paw" size={24} color={colors.primary} /><View style={{ flex: 1 }}><Text style={styles.pointsTitle}>{contributedChallenges.length === 1 ? "Challenge contributed to" : "Challenges contributed to"}</Text><Text style={styles.pointsSubtitle}>{contributedChallenges.map((challenge) => challenge.title).join(" · ")}</Text></View></View>}
         </>}
       </ScrollView>}
   </SafeAreaView>;

@@ -26,7 +26,12 @@ import { onAuthStateChanged } from "firebase/auth";
 import { colors, fonts } from "@/constants/theme";
 import { usePets } from "@/hooks/usePets";
 import type { Place } from "@/lib/location";
-import { fetchFamily, fetchPointsTable, logActivity } from "@/lib/logData";
+import { fetchFamily, logActivity } from "@/lib/logData";
+import { getChallengesForPet, getMemoriesForPet } from "@/lib/db";
+import { challengeChanges } from "@/lib/challengeAccounting";
+import { getUserReference, getPetReference } from "../../../firebaseServices/memoriesService";
+import { Timestamp } from "firebase/firestore";
+import type { Challenge, Memory } from "@/types/firestore";
 import { selectedPetStore } from "@/lib/store";
 import type { User } from "@/types/firestore";
 
@@ -35,7 +40,8 @@ import type { User } from "@/types/firestore";
 
 export default function LogScreen() {
   const [family, setFamily] = useState<User[]>([]);
-  const [pointsTable, setPointsTable] = useState<Record<string, number>>({});
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [existingMemories, setExistingMemories] = useState<Memory[]>([]);
 
   const [activity, setActivity] = useState<string | null>(null);
   const [duration, setDuration] = useState<number | "custom" | null>(null);
@@ -59,13 +65,14 @@ export default function LogScreen() {
   const { pets, pet } = usePets();
   const petId = pet?.petId;
 
-  useEffect(() => {
-    (async () => setPointsTable(await fetchPointsTable()))();
-  }, []);
+
 
   useEffect(() => {
     if (!petId) return;
-    (async () => setFamily(await fetchFamily(petId)))();
+    (async () => {
+      const [members, active, memories] = await Promise.all([fetchFamily(petId), getChallengesForPet(petId), getMemoriesForPet(petId)]);
+      setFamily(members); setChallenges(active); setExistingMemories(memories);
+    })();
   }, [petId]);
 
   const resetForm = () => {
@@ -95,9 +102,13 @@ export default function LogScreen() {
     );
 
   const minutes = duration === "custom" ? Number(customMinutes) : (duration ?? undefined);
-  const basePoints = activity ? (pointsTable[activity] ?? 0) : 0;
-  const bonusPoints =
-    participants.length > 1 ? (pointsTable.TogetherBonus ?? 0) : 0;
+  const basePoints = 0;
+  const bonusPoints = participants.length > 1 ? 5 : 0;
+  const projected = activity && petId ? challengeChanges(challenges, [...existingMemories, {
+    memoryId: "preview", petId: getPetReference(petId), createdBy: getUserReference(currentUserId()),
+    occurredAt: Timestamp.fromDate(occurredAt), activityType: activity,
+    participants: participants.map(getUserReference), durationMinutes: minutes ?? null,
+  } as Memory]).filter(c => c.challenge.completionStatus === "in_progress" && c.progress > c.challenge.progress) : [];
   const canSubmit =
     !!pet &&
     !!activity &&
@@ -226,6 +237,18 @@ export default function LogScreen() {
             <LocationCard place={place} onChange={setPlace} />
           </View>
 
+          {activity && <View style={styles.challengePreview}>
+            <Text style={styles.challengePreviewTitle}>Challenge progress</Text>
+            {projected.length ? projected.map(item => (
+              <View key={item.challenge.challengeId} style={styles.challengePreviewItem}>
+                <Text style={styles.challengePreviewName}>{item.challenge.title}</Text>
+                <Text style={styles.challengePreviewDetail}>
+                  {item.challenge.progress} → {item.progress} / {item.challenge.goal}{item.complete ? " · Completes challenge!" : ""}
+                </Text>
+              </View>
+            )) : <Text style={styles.challengePreviewDetail}>No active challenges affected by these selections.</Text>}
+          </View>}
+
           <View style={styles.footer}>
             {error && <Text style={styles.error}>{error}</Text>}
             <Pressable
@@ -241,11 +264,7 @@ export default function LogScreen() {
             </Pressable>
             <Text style={styles.summary}>
               {summary}
-              {activity && (
-                <Text style={styles.summaryPoints}>
-                  {" · "}estimated +{basePoints + bonusPoints} Points
-                </Text>
-              )}
+
             </Text>
           </View>
         </ScrollView>
@@ -271,7 +290,11 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.45 },
   buttonText: { fontSize: 18, fontFamily: fonts.heading, color: "#FFFFFF" },
   summary: { fontSize: 14, color: colors.textMuted, textAlign: "center" },
-  summaryPoints: { fontFamily: fonts.subheading, color: colors.primary },
+  challengePreview: { padding: 16, borderRadius: 18, backgroundColor: colors.primarySoft, gap: 10 },
+  challengePreviewTitle: { fontFamily: fonts.heading, fontSize: 18, color: colors.primary },
+  challengePreviewItem: { padding: 12, borderRadius: 12, backgroundColor: colors.surface, gap: 4 },
+  challengePreviewName: { fontFamily: fonts.subheading, color: colors.text },
+  challengePreviewDetail: { color: colors.textMuted, fontSize: 13 },
   error: { color: colors.openText, textAlign: "center" },
   otherInput: { marginTop: 12, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1.5, borderRadius: 16, paddingHorizontal: 16, minHeight: 52, color: colors.text, fontSize: 16 },
 });

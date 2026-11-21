@@ -2,7 +2,7 @@ import { doc, runTransaction, Timestamp } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { currentUserId } from "@/lib/auth";
 import { getChallengesForPet, getLevels, getMemoriesForPet } from "@/lib/db";
-import { progressFromMemories } from "@/lib/challengeProgress";
+import { challengeChanges, levelForTotal } from "@/lib/challengeAccounting";
 import { dataVersionStore } from "@/lib/store";
 import { getUserReference } from "../../firebaseServices/memoriesService";
 
@@ -26,21 +26,26 @@ export async function deleteMemory(petId: string, memoryId: string) {
     if (memorySnapshot.data().createdBy?.id !== currentUserId()) throw new Error("Only the person who posted this memory can delete it.");
     if (!petSnapshot.exists()) throw new Error("Pet not found.");
     const d = memorySnapshot.data();
-    const points = Math.max(0, Number(d.basePoints ?? 0) + Number(d.bonusPoints ?? 0));
-    const totalPoints = Math.max(0, Number(petSnapshot.data().totalPoints ?? 0) - points);
-    let level = 1;
-    for (const entry of levels) if (entry.nextLevelPoints > 0 && totalPoints >= entry.nextLevelPoints) level = Math.max(level, entry.levelNum + 1);
+    const points = Number(d.bonusPoints ?? 0);
+    const changes = challengeChanges(challenges, remaining);
+    const challengeDelta = challengeSnapshots.reduce((sum, snap) => {
+      const change = changes.find(c => c.challenge.challengeId === snap.id);
+      if (!snap.exists() || snap.data().completionStatus === "cancelled" || !change) return sum;
+      return sum + (Number(change.complete) - Number(snap.data().completionStatus === "completed")) * Math.max(0, Number(snap.data().pointReward ?? 0));
+    }, 0);
+    const totalPoints = Math.max(0, Number(petSnapshot.data().totalPoints ?? 0) - points + challengeDelta);
+    const level = levelForTotal(levels, totalPoints);
     tx.delete(memoryRef);
     tx.update(petRef, { totalPoints, level });
     for (const snapshot of challengeSnapshots) {
       if (!snapshot.exists() || snapshot.data().completionStatus === "cancelled") continue;
       const challenge = challenges.find((c) => c.challengeId === snapshot.id)!;
-      const { progress, completedBy } = progressFromMemories(challenge, remaining);
-      const complete = progress >= challenge.goal;
+      const change = changes.find(c => c.challenge.challengeId === snapshot.id);
+      if (!change) continue;
       tx.update(snapshot.ref, {
-        progress, completedBy: completedBy.map(getUserReference),
-        completionStatus: complete ? "completed" : "in_progress",
-        completedAt: complete ? (snapshot.data().completedAt ?? Timestamp.now()) : null,
+        progress: change.progress, completedBy: change.completedBy.map(getUserReference),
+        completionStatus: change.complete ? "completed" : "in_progress",
+        completedAt: change.complete ? (snapshot.data().completedAt ?? Timestamp.now()) : null,
       });
     }
   });

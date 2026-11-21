@@ -1,9 +1,9 @@
 import { doc, GeoPoint, runTransaction, Timestamp } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { currentUserId } from "@/lib/auth";
-import { getChallengesForPet, getLevels, getMemoriesForPet, getPoints } from "@/lib/db";
+import { getChallengesForPet, getLevels, getMemoriesForPet } from "@/lib/db";
 import { resolveLocationForSave } from "@/lib/location";
-import { progressFromMemories } from "@/lib/challengeProgress";
+import { challengeChanges, levelForTotal } from "@/lib/challengeAccounting";
 import { uploadImage } from "@/lib/storage";
 import { dataVersionStore } from "@/lib/store";
 import { getUserReference } from "../../firebaseServices/memoriesService";
@@ -26,8 +26,8 @@ export type MemoryChanges = {
 /** Edit an existing activity without awarding its points twice. */
 export async function editMemory(input: MemoryChanges) {
   const uid = currentUserId();
-  const [memories, challenges, levels, pointRows] = await Promise.all([
-    getMemoriesForPet(input.petId), getChallengesForPet(input.petId), getLevels(), getPoints(),
+  const [memories, challenges, levels] = await Promise.all([
+    getMemoriesForPet(input.petId), getChallengesForPet(input.petId), getLevels(),
   ]);
   const previous = memories.find((m) => m.memoryId === input.memoryId);
   if (!previous) throw new Error("Memory not found.");
@@ -35,11 +35,10 @@ export async function editMemory(input: MemoryChanges) {
   if (!input.participants.includes(uid)) throw new Error("You must remain a participant.");
   if (input.occurredAt.getTime() > Date.now()) throw new Error("The activity cannot be in the future.");
   const locationLabel = await resolveLocationForSave(input.location);
-  const points = Object.fromEntries(pointRows.map((p) => [p.action, p.pointsGained]));
-  const basePoints = Number(points[input.activityType] ?? 0);
-  const bonusPoints = input.participants.length > 1 ? Number(points.TogetherBonus ?? 0) : 0;
-  const oldPoints = Number(previous.basePoints ?? 0) + Number(previous.bonusPoints ?? 0);
-  const delta = basePoints + bonusPoints - oldPoints;
+  const basePoints = 0;
+  const bonusPoints = input.participants.length > 1 ? 5 : 0;
+  const oldPoints = Number(previous.bonusPoints ?? 0);
+  const delta = bonusPoints - oldPoints;
   // A replacement photo is uploaded before the transaction. Existing photos are kept by default.
   const photoPath = input.photoUri ? await uploadImage(input.photoUri, `memories/${input.memoryId}-edit-${Date.now()}.jpg`) : input.removePhoto ? null : previous.photoPath;
   const update = {
@@ -67,20 +66,25 @@ export async function editMemory(input: MemoryChanges) {
     if (!memorySnap.exists() || memorySnap.data().createdBy?.id !== uid) throw new Error("Only the creator can edit this memory.");
     if (memorySnap.data().petId?.id !== input.petId) throw new Error("Memory belongs to a different pet.");
     if (!petSnap.exists()) throw new Error("Pet not found.");
-    const total = Math.max(0, Number(petSnap.data().totalPoints ?? 0) + delta);
-    let level = 1;
-    for (const entry of levels) if (entry.nextLevelPoints > 0 && total >= entry.nextLevelPoints) level = Math.max(level, entry.levelNum + 1);
+    const changes = challengeChanges(challenges, revisedMemories);
+    const challengeDelta = challengeSnaps.reduce((sum, snap) => {
+      const change = changes.find(c => c.challenge.challengeId === snap.id);
+      if (!snap.exists() || snap.data().completionStatus === "cancelled" || !change) return sum;
+      return sum + (Number(change.complete) - Number(snap.data().completionStatus === "completed")) * Math.max(0, Number(snap.data().pointReward ?? 0));
+    }, 0);
+    const total = Math.max(0, Number(petSnap.data().totalPoints ?? 0) + delta + challengeDelta);
+    const level = levelForTotal(levels, total);
     tx.update(memoryRef, update);
     tx.update(petRef, { totalPoints: total, level });
     for (const snap of challengeSnaps) {
       if (!snap.exists() || snap.data().completionStatus === "cancelled") continue;
       const challenge = challenges.find((c) => c.challengeId === snap.id)!;
-      const { progress, completedBy } = progressFromMemories(challenge, revisedMemories);
-      const complete = progress >= challenge.goal;
+      const change = changes.find(c => c.challenge.challengeId === snap.id);
+      if (!change) continue;
       tx.update(snap.ref, {
-        progress, completedBy: completedBy.map(getUserReference),
-        completionStatus: complete ? "completed" : "in_progress",
-        completedAt: complete ? (snap.data().completedAt ?? Timestamp.now()) : null,
+        progress: change.progress, completedBy: change.completedBy.map(getUserReference),
+        completionStatus: change.complete ? "completed" : "in_progress",
+        completedAt: change.complete ? (snap.data().completedAt ?? Timestamp.now()) : null,
       });
     }
   });

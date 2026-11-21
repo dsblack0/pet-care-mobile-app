@@ -17,7 +17,7 @@ import {
   getSchedulesForPet,
 } from "@/lib/db";
 import { resolveLocationForSave } from "@/lib/location";
-import { progressFromMemories } from "@/lib/challengeProgress";
+import { challengeChanges, levelForTotal } from "@/lib/challengeAccounting";
 import { toDate } from "@/lib/homeData";
 import { isSameDay } from "@/lib/format";
 import { uploadImage } from "@/lib/storage";
@@ -110,8 +110,8 @@ export async function logActivity(input: LogActivityInput): Promise<Memory> {
       : null,
     schedule ? getCareScheduleReference(schedule.careScheduleId) : null,
     input.durationMinutes ?? null,
-    input.basePoints,
-    input.bonusPoints,
+    0,
+    input.participants.length > 1 ? 5 : 0,
   );
 
   // Commit the memory and the family point/level change atomically.
@@ -119,31 +119,36 @@ export async function logActivity(input: LogActivityInput): Promise<Memory> {
   const [levels, existingMemories, challenges] = await Promise.all([
     getLevels(), getMemoriesForPet(input.petId), getChallengesForPet(input.petId),
   ]);
-  const earned = Math.max(0, input.basePoints + input.bonusPoints);
+  const earned = input.participants.length > 1 ? 5 : 0;
   await runTransaction(db, async (tx) => {
     const petDocument = doc(db, "pets", input.petId);
     const petSnapshot = await tx.get(petDocument);
-    const challengeDocs = await Promise.all(challenges.filter((c) => c.completionStatus === "in_progress").map((c) => tx.get(doc(db, "challenges", c.challengeId))));
+    const challengeDocs = await Promise.all(challenges.filter((c) => c.completionStatus !== "cancelled").map((c) => tx.get(doc(db, "challenges", c.challengeId))));
     if (!petSnapshot.exists()) throw new Error("Pet no longer exists.");
-    const newTotal = Number(petSnapshot.data().totalPoints ?? 0) + earned;
-    const eligible = levels.filter((level) => newTotal >= level.nextLevelPoints && level.nextLevelPoints > 0);
-    const nextLevel = Math.max(Number(petSnapshot.data().level ?? 1), ...eligible.map((level) => level.levelNum + 1), 1);
+    const allMemories = [...existingMemories, { memoryId, ...newMemory } as Memory];
+    const changes = challengeChanges(challenges, allMemories);
+    const challengeDelta = challengeDocs.reduce((sum, snap) => {
+      const change = changes.find(c => c.challenge.challengeId === snap.id);
+      if (!snap.exists() || snap.data().completionStatus === "cancelled" || !change) return sum;
+      return sum + (Number(change.complete) - Number(snap.data().completionStatus === "completed")) * Math.max(0, Number(snap.data().pointReward ?? 0));
+    }, 0);
+    const newTotal = Math.max(0, Number(petSnapshot.data().totalPoints ?? 0) + earned + challengeDelta);
+    const nextLevel = levelForTotal(levels, newTotal);
     tx.set(doc(db, "memories", memoryId), {
       ...newMemory,
       ...(input.customActivityName ? { customActivityName: input.customActivityName } : {}),
       ...(locationLabel ? { locationLabel } : {}),
     });
     tx.update(petDocument, { totalPoints: newTotal, level: nextLevel });
-    const allMemories = [...existingMemories, { memoryId, ...newMemory } as Memory];
     for (const snapshot of challengeDocs) {
-      if (!snapshot.exists() || snapshot.data().completionStatus !== "in_progress") continue;
-      const challenge = challenges.find((c) => c.challengeId === snapshot.id)!;
-      const { progress, completedBy } = progressFromMemories(challenge, allMemories);
-      const goalMet = progress >= challenge.goal;
+      if (!snapshot.exists() || snapshot.data().completionStatus === "cancelled") continue;
+      const change = changes.find(c => c.challenge.challengeId === snapshot.id);
+      if (!change) continue;
       tx.update(snapshot.ref, {
-        progress,
-        completedBy: completedBy.map(getUserReference),
-        ...(goalMet ? { completionStatus: "completed", completedAt: Timestamp.now() } : {}),
+        progress: change.progress,
+        completedBy: change.completedBy.map(getUserReference),
+        completionStatus: change.complete ? "completed" : "in_progress",
+        completedAt: change.complete ? (snapshot.data().completedAt ?? Timestamp.now()) : null,
       });
     }
   });
